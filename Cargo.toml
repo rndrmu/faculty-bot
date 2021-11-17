@@ -1,0 +1,13 @@
+[package]
+name = "faculty-bot"
+version = "0.1.0"
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+serenity = { version="0.10.9", features = ["client", "gateway", "cache", "model","framework", "standard_framework", "unstable_discord_api", "voice"] }
+serenity_utils = {  features = ["cache", "rustls_backend"], version = "0.6.1" }
+tokio = { version = "1", features = ["macros","signal", "fs", "rt-multi-thread", "time"] }
+dotenv = "0.15.0"
+diesel = { version = "*", default-features = false, features = ["postgres", "r2d2", "numeric"] }
