@@ -2,6 +2,8 @@
 extern crate diesel;
 
 mod database;
+mod commands;
+
 
 use diesel::pg::PgConnection;
 use diesel::r2d2;
@@ -26,10 +28,19 @@ use database::establish_connection;
 
 pub struct ShardManagerContainer;
 
+pub type DBPool = r2d2::Pool<r2d2::ConnectionManager<PgConnection>>;
+pub struct DatabaseContainer;
+
 impl TypeMapKey for ShardManagerContainer {
     type Value = Arc<Mutex<ShardManager>>;
 }
 
+impl TypeMapKey for DatabaseContainer {
+    type Value = DBPool;
+}
+
+
+use commands::help::MY_HELP;
 
 
 struct Handler;
@@ -77,9 +88,10 @@ async fn main() {
     let framework = StandardFramework::new()
         .configure(|c| {
             c.owners(owners)
-                .prefix(env::var("PREFIX").unwrap_or(String::from("&")).as_str())
+                .prefix(env::var("PREFIX").unwrap_or(String::from("..")).as_str())
                 .allow_dm(false)
-        });
+        })
+        .help(&MY_HELP);
 
     let mut client = Client::builder(&token)
         .application_id(u64::from(bot_id))
@@ -96,7 +108,6 @@ async fn main() {
 
     let shard_manager = client.shard_manager.clone();
 
-    // start tokio-tungstenite server
 
     tokio::spawn(async move {
         tokio::signal::ctrl_c()
