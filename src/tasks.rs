@@ -1,6 +1,6 @@
 #![allow(unused_variables, unused_mut, dead_code)]
 
-use crate::{config::FacultyManagerMealplanConfig, prelude::Error, structs, Data};
+use crate::{config::FacultyManagerMealplanConfig, prelude::Error, structs::{self, Rss}, Data};
 
 use poise::serenity_prelude::{self as serenity, Mentionable};
 
@@ -133,49 +133,128 @@ pub async fn post_rss(ctx: serenity::Context, data: Data) -> Result<(), Error> {
             .await
             .map_err(Error::Database)
             .unwrap();
+            
+            let mut to_post = Vec::new();
+
+            for item in items {
+                let title = item.title().unwrap();
+                let link = item.link().unwrap();
+                let description = item.description().unwrap();
+                let date = item.pub_date().unwrap();
+                // parse to chrono Local
+                let date_ = chrono::DateTime::parse_from_rfc2822(date).unwrap();
+
+                let mut exists = false;
+                for posted in &alr_posted {
+                    if posted.rss_title == title {
+                        exists = true;
+                        break;
+                    }
+                }
+
+                if !exists {
+                    to_post.push((title, link, description, date_));
+                }
+            }
+
+            for post in to_post {
+                let (title, link, description, date) = post;
+
+                let sql_res = sqlx::query_as::<sqlx::Postgres, structs::Rss>(
+                    "SELECT * FROM posted_rss WHERE rss_title = $1 AND channel_id = $2",
+                )
+                .bind(&title)
+                .bind(channel_id.0 as i64)
+                .fetch_optional(&db)
+                .await
+                .map_err(Error::Database)
+                .unwrap();
 
 
+                if let Some(exists) = sql_res {
+                    info!("An already posted rss item");
+                    let curr_chan = channel_id;
+                    let msg = curr_chan
+                        .message(&ctx, exists.message_id as u64)
+                        .await
+                        .map_err(Error::Serenity)
+                        .unwrap();
+                    let embed = msg.embeds.first().unwrap();
+    
+                    let this_date = embed
+                        .timestamp
+                        .as_ref()
+                        .unwrap()
+                        .parse::<chrono::DateTime<chrono::Local>>()
+                        .unwrap();
+                    let item_date = date.with_timezone(&chrono::Local);
 
-            let title = latest.title().unwrap();
-            let link = latest.link().unwrap();
-            let description = latest.description().unwrap();
-            let date = latest.pub_date().unwrap();
-            let date_ = chrono::DateTime::parse_from_rfc2822(date).unwrap();
+                    // compare dates and post update if newer
+                    if this_date < item_date {
+                        update_posts(
+                            &ctx,
+                            &db,
+                            channel_id,
+                            &conf,
+                            title,
+                            link,
+                            description,
+                            &item_date,
+                            &msg
+                        ).await?;
+                    }
+                } else {
+                    // because let-else won't let me not return from this
+                    // post
+                    if let Err(why) = post_item(
+                        &ctx,
+                        &db,
+                        channel_id,
+                        &conf,
+                        title,
+                        link,
+                        description,
+                        &date.with_timezone(&chrono::Local),
+                    ).await {
+                        tracing::error!("Failed to post rss: {:?}", why);
+                    }
+                   
+            }
 
             tracing::debug!("Posting in channel: {}", channel_id.0);
+            };
+        }
 
-            let sql_res = sqlx::query_as::<sqlx::Postgres, structs::Rss>(
-                "SELECT * FROM posted_rss WHERE rss_title = $1 AND channel_id = $2",
-            )
-            .bind(&title)
-            .bind(channel_id.0 as i64)
-            .fetch_optional(&db)
-            .await
-            .map_err(Error::Database)
-            .unwrap();
+        info!("Sleeping for {} hours", conf.timeout_hrs);
+        tokio::time::sleep(tokio::time::Duration::from_secs(conf.timeout_hrs * 60 * 60)).await;
+    }
+}
 
-            if let Some(exists) = sql_res {
-                info!("Update to Already posted rss item");
-                let curr_chan = channel_id;
-                let msg = curr_chan
-                    .message(&ctx, exists.message_id as u64)
-                    .await
-                    .map_err(Error::Serenity)
-                    .unwrap();
-                let embed = msg.embeds.first().unwrap();
+async fn fetch_feed(feed: impl Into<String>) -> Result<Channel, Error> {
+    let bytestream = reqwest::get(feed.into())
+        .await
+        .map_err(Error::NetRequest)?
+        .bytes()
+        .await
+        .map_err(Error::NetRequest)?;
+    let channel = Channel::read_from(&bytestream[..]).map_err(Error::Rss)?;
 
-                let this_date = embed
-                    .timestamp
-                    .as_ref()
-                    .unwrap()
-                    .parse::<chrono::DateTime<chrono::Utc>>()
-                    .unwrap();
-                let item_date = date_.with_timezone(&chrono::Utc);
+    Ok(channel)
+}
 
-                // compare dates and post update if newer
-                if this_date < item_date {
-                    let msg_result = channel_id
-                        .send_message(&ctx, |f| {
+async fn update_posts(
+    ctx: &serenity::Context,
+    db: &sqlx::PgPool,
+    channel_id: &serenity::model::id::ChannelId,
+    conf: &TaskConfigRss,
+    title: &str,
+    link: &str,
+    description: &str,
+    date_: &chrono::DateTime<chrono::Local>,
+    msg: &serenity::model::channel::Message,
+) -> Result<(), Error> {
+    let msg_result = channel_id
+                        .send_message(ctx, |f| {
                             f.content(format!(
                                 "Der letzte Post im Planungsportal wurde aktualisiert · {}",
                                 title
@@ -196,7 +275,7 @@ pub async fn post_rss(ctx: serenity::Context, data: Data) -> Result<(), Error> {
                                     })
                                 })
                             })
-                            .reference_message(&msg)
+                            .reference_message(msg)
                         })
                         .await
                         .map_err(Error::Serenity);
@@ -208,71 +287,65 @@ pub async fn post_rss(ctx: serenity::Context, data: Data) -> Result<(), Error> {
                         .bind(msg.id.0 as i64)
                         .bind(&title)
                         .bind(channel_id.0 as i64)
-                        .execute(&db)
+                        .execute(db)
                         .await
                         .map_err(Error::Database)
                         {
                             tracing::error!("Failed to update rss message id: {:?}", why);
                         }
                     };
-                }
-            } else {
-                // because let-else won't let me not return from this
-                // post
-                let msg = channel_id
-                    .send_message(&ctx, |f| {
-                        f.content(format!("Neue Nachricht im Planungsportal · {}", title))
-                            .embed(|e| {
-                                e.title(title)
-                                    .url(link)
-                                    .description(conf.clean_regex.replace_all(description, ""))
-                                    .timestamp(date_.to_rfc3339())
-                                    .color(0xb00b69)
-                            })
-                            .components(|c| {
-                                c.create_action_row(|a| {
-                                    a.create_button(|b| {
-                                        b.label("Open in Browser")
-                                            .style(serenity::ButtonStyle::Link)
-                                            .url(link)
-                                    })
-                                })
-                            })
-                    })
-                    .await
-                    .map_err(Error::Serenity);
 
-                // explode
-                if let Ok(msg) = msg {
-                    if let Err(why) = sqlx::query(
-                        "INSERT INTO posted_rss (rss_title, channel_id, message_id) VALUES ($1, $2, $3)",
-                    )
-                    .bind(&title)
-                    .bind(channel_id.0 as i64)
-                    .bind(msg.id.0 as i64)
-                    .execute(&db)
-                    .await
-                    .map_err(Error::Database)
-                    {
-                        tracing::error!("Failed to insert rss message id: {:?}", why);
-                    }
-                }
-            };
-        }
-
-        info!("Sleeping for {} hours", conf.timeout_hrs);
-        tokio::time::sleep(tokio::time::Duration::from_secs(conf.timeout_hrs * 60 * 60)).await;
-    }
+                    Ok(())
 }
 
-async fn fetch_feed(feed: impl Into<String>) -> Result<Channel, Error> {
-    let bytestream = reqwest::get(feed.into())
-        .await
-        .map_err(Error::NetRequest)?
-        .bytes()
-        .await
-        .map_err(Error::NetRequest)?;
-    let channel = Channel::read_from(&bytestream[..]).map_err(Error::Rss)?;
+async fn post_item(
+    ctx: &serenity::Context,
+    db: &sqlx::PgPool,
+    channel_id: &serenity::model::id::ChannelId,
+    conf: &TaskConfigRss,
+    title: &str,
+    link: &str,
+    description: &str,
+    date: &chrono::DateTime<chrono::Local>,
+) -> Result<(), Error> {
+    let msg = channel_id
+    .send_message(&ctx, |f| {
+        f.content(format!("Neue Nachricht im Planungsportal · {}", title))
+            .embed(|e| {
+                e.title(title)
+                    .url(link)
+                    .description(conf.clean_regex.replace_all(description, ""))
+                    .timestamp(date.to_rfc3339())
+                    .color(0xb00b69)
+            })
+            .components(|c| {
+                c.create_action_row(|a| {
+                    a.create_button(|b| {
+                        b.label("Open in Browser")
+                            .style(serenity::ButtonStyle::Link)
+                            .url(link)
+                    })
+                })
+            })
+    })
+    .await
+    .map_err(Error::Serenity);
 
-    Ok(channel)
+    if let Ok(msg) = msg {
+        if let Err(why) = sqlx::query(
+            "INSERT INTO posted_rss (rss_title, channel_id, message_id) VALUES ($1, $2, $3)",
+        )
+        .bind(&title)
+        .bind(channel_id.0 as i64)
+        .bind(msg.id.0 as i64)
+        .execute(db)
+        .await
+        .map_err(Error::Database)
+        {
+            tracing::error!("Failed to insert rss message id: {:?}", why);
+        }
+    }
+
+
+    Ok(())
 }
