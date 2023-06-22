@@ -125,7 +125,7 @@ pub async fn post_rss(ctx: serenity::Context, data: Data) -> Result<(), Error> {
             let channel = fetch_feed(feed_url).await.unwrap();
             let items = channel.items();
             // get all items that haven't been posted yet
-            let alr_posted = sqlx::query_as::<sqlx::Postgres, structs::Rss>(
+            /* let alr_posted = sqlx::query_as::<sqlx::Postgres, structs::Rss>(
                 "SELECT * FROM posted_rss WHERE channel_id = $1",
             )
             .bind(channel_id.0 as i64)
@@ -155,10 +155,17 @@ pub async fn post_rss(ctx: serenity::Context, data: Data) -> Result<(), Error> {
                 if !exists {
                     to_post.push((title, link, description, date_));
                 }
-            }
+            } */
 
-            for post in to_post {
-                let (title, link, description, date) = post;
+            tracing::info!("Checking up on {} rss items", items.len());
+
+            for item in items {
+                let title = item.title().unwrap();
+                let link = item.link().unwrap();
+                let description = item.description().unwrap();
+                let date_ = item.pub_date().unwrap();
+                // parse to chrono Local
+                let date = chrono::DateTime::parse_from_rfc2822(date_).unwrap();
 
                 let sql_res = sqlx::query_as::<sqlx::Postgres, structs::Rss>(
                     "SELECT * FROM posted_rss WHERE rss_title = $1 AND channel_id = $2",

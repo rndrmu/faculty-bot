@@ -1,9 +1,10 @@
 {
     "invalid_email": "Ungültige E-Mail-Adresse",
     "email_not_found": "E-Mail-Adresse nicht gefunden",
-    "mail_retrieve_error": "Es gab ein Problem beim finden deiner E-Mail. Bitte versuche es später erneut. Wenn das Problem weiterhin besteht, wende dich bitte an die Mods.",
     "err_already_verified": "Dein Account ist bereits verifiziert.",
     "verification_successful": "Dein Account wurde erfolgreich verifiziert.",
+    "email_msg_header": "Hallo {name},\n\n bitte benutze folgenden Code um deinen Account zu verifizieren:",
+    "email_msg_footer": "Wenn du diese E-Mail nicht angefordert hast, kannst du sie ignorieren.",
 
     "message_pinned": "Nachricht angepinnt",
     "message_unpinned": "Nachricht gelöst",

@@ -102,7 +102,6 @@ pub struct FacultyManagerRssConfig {
 pub struct FacultyManagerPodcastConfig {
     pub post_podcast: bool,
     pub podcast_check_interval: u64,
-    pub author_image: String,
     pub podcast_url: String,
     pub podcast_channel: serenity::ChannelId,
 }

@@ -62,6 +62,10 @@ pub mod prelude {
             }
         }
     }
+
+    pub mod translations {
+        rosetta_i18n::include_translations!();
+    }
 }
 
 pub type Context<'a> = poise::Context<'a, Data, prelude::Error>;

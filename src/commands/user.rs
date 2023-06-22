@@ -1,5 +1,6 @@
-use crate::{prelude::Error, structs, Context};
+use crate::{prelude::{Error, translations::Lang}, structs, Context};
 use poise::serenity_prelude as serenity;
+use crate::prelude::translations;
 
 /// Verify yourself with your student email address
 #[poise::command(
@@ -20,9 +21,17 @@ pub async fn verify(
     #[name_localized("de", "email-adresse")]
     email: String,
 ) -> Result<(), Error> {
+    let lang = match ctx.locale() {
+        Some("de") => Lang::De,
+        Some("ja") => Lang::Ja,
+        _ => Lang::En,
+    };
+
     // check if email is valid
     if !email.ends_with("@stud.hs-kempten.de") {
-        return Err(Error::WithMessage("Invalid email address".to_string()));
+        return Err(Error::WithMessage(
+            lang.invalid_email().into()
+        ));
     }
 
     let mmail = crate::utils::find_discord_tag(&ctx.author().tag()).await;
