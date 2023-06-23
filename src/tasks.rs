@@ -1,13 +1,9 @@
 #![allow(unused_variables, unused_mut, dead_code)]
 
 use crate::{config::FacultyManagerMealplanConfig, prelude::Error, structs::{self, Rss}, Data};
-
 use poise::serenity_prelude::{self as serenity, Mentionable};
-
 use rss::Channel;
-
 use chrono::{Datelike, Timelike};
-
 use tracing::info;
 
 struct TaskConfig {
@@ -24,6 +20,7 @@ struct TaskConfigRss {
     pub clean_regex: regex::Regex,
     pub timeout_hrs: u64,
 }
+
 
 /// Posts the mensa plan for the current week
 pub async fn post_mensaplan(ctx: serenity::Context, data: Data) -> Result<(), Error> {
@@ -124,38 +121,6 @@ pub async fn post_rss(ctx: serenity::Context, data: Data) -> Result<(), Error> {
         for (channel_id, feed_url) in conf.map.iter() {
             let channel = fetch_feed(feed_url).await.unwrap();
             let items = channel.items();
-            // get all items that haven't been posted yet
-            /* let alr_posted = sqlx::query_as::<sqlx::Postgres, structs::Rss>(
-                "SELECT * FROM posted_rss WHERE channel_id = $1",
-            )
-            .bind(channel_id.0 as i64)
-            .fetch_all(&db)
-            .await
-            .map_err(Error::Database)
-            .unwrap();
-            
-            let mut to_post = Vec::new();
-
-            for item in items {
-                let title = item.title().unwrap();
-                let link = item.link().unwrap();
-                let description = item.description().unwrap();
-                let date = item.pub_date().unwrap();
-                // parse to chrono Local
-                let date_ = chrono::DateTime::parse_from_rfc2822(date).unwrap();
-
-                let mut exists = false;
-                for posted in &alr_posted {
-                    if posted.rss_title == title {
-                        exists = true;
-                        break;
-                    }
-                }
-
-                if !exists {
-                    to_post.push((title, link, description, date_));
-                }
-            } */
 
             tracing::info!("Checking up on {} rss items", items.len());
 

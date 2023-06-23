@@ -1,10 +1,17 @@
-use poise::serenity_prelude as serenity;
+use std::{collections::VecDeque, time::Duration};
+
+use poise::{serenity_prelude as serenity, futures_util::stream};
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
     process::Command,
 };
 
 use crate::prelude::Error;
+
+use askama::Template;
+use lettre::{Transport, SmtpTransport, transport::smtp::authentication::Credentials, Message, message::header::ContentType};
+use lettre_email::{EmailBuilder, Email};
+use lettre::message::{header, MultiPart, SinglePart};
 
 /// Comverts a pdf file to a png buffer
 async fn pdf_to_png(filepath: std::path::PathBuf) -> Result<Vec<u8>, Error> {
@@ -118,6 +125,140 @@ pub async fn find_discord_tag(tag: &str) -> imap::error::Result<Option<String>> 
 
     Ok(Some(body))
 }
+
+#[derive(Template)]
+#[template(path = "verification_email.html")]
+struct VerificationEmailTemplate<'a> {
+    botname: &'a str,
+    code: &'a str,
+}
+
+pub async fn send_email(to: impl Into<String>, user_id: serenity::UserId, username: impl Into<String>) -> Result<(), Error> {
+
+    let code = generate_verification_code();
+    let mailuser = std::env::var("MAILUSER").unwrap();
+    let mailpw = std::env::var("MAILPW").unwrap();
+    let smtp_server = std::env::var("SMTP_SERVER").unwrap();
+
+    let email_template = VerificationEmailTemplate {
+        botname: "FacultyManager",
+        code: &code,
+    };
+
+    let receiver = format!("{} <{}>", username.into(), to.into());
+    let sender = format!("FacultyManager <{}>", mailuser);
+
+    let email = Message::builder()
+        .to(receiver.parse().unwrap_or_else(|_| panic!("Invalid email address: {}", receiver)))
+        .from(sender.parse().unwrap_or_else(|_| panic!("Invalid email address: {}", sender)))
+        .header(ContentType::TEXT_HTML)
+        .subject("Verification Code")
+        .body(email_template.render().unwrap())
+        .expect("Rendern ist etzala hadde abbeid");      
+    
+    let creds = Credentials::new(mailuser, mailpw);
+
+    let mailer = SmtpTransport::relay(&smtp_server).unwrap_or_else(|_| panic!("Could not connect to SMTP server {}", smtp_server))
+        .credentials(creds)
+        .build();
+
+
+    mailer
+        .send(&email).unwrap();
+
+
+    Ok(())
+}
+
+fn generate_verification_code() -> String {
+// alphanumeric
+use rand::Rng;
+    let code: String = rand::thread_rng()
+        .sample_iter(&rand::distributions::Alphanumeric)
+        .take(10)
+        .map(char::from)
+        .collect();
+
+    // encode with hex
+   code
+
+}
+
+
+pub struct EmailSender {
+    tx: tokio::sync::mpsc::Sender<String>,
+    rx: tokio::sync::mpsc::Receiver<String>,
+    queue: VecDeque<CurrentEmail>,
+    mailuser: String,
+    mailpw: String,
+    smtp_server: String,
+}
+
+pub struct CurrentEmail {
+    to: String,
+    user_id: serenity::UserId,
+    code: String,
+    email: Message,
+}
+
+impl EmailSender {
+    pub fn new() -> Self {
+        let (tx, rx) = tokio::sync::mpsc::channel(100);
+        Self {
+            tx,
+            rx,
+            queue: VecDeque::new(),
+            mailuser: std::env::var("MAILUSER").unwrap(),
+            mailpw: std::env::var("MAILPW").unwrap(),
+            smtp_server: std::env::var("SMTP_SERVER").unwrap(),
+        }
+    }
+
+    pub fn send(&mut self, to: impl Into<String>, user_id: serenity::UserId, username: impl Into<String>) {
+        let code = generate_verification_code();
+        let recv = to.into();
+        let receiver = format!("{} <{}>", username.into(), recv);
+        let sender = format!("FacultyManager <{}>", self.mailuser);
+
+        let email_template = VerificationEmailTemplate {
+            botname: "FacultyManager",
+            code: &code,
+        };
+
+        let email = Message::builder()
+            .to(receiver.parse().unwrap_or_else(|_| panic!("Invalid email address: {}", receiver)))
+            .from(sender.parse().unwrap_or_else(|_| panic!("Invalid email address: {}", sender)))
+            .header(ContentType::TEXT_HTML)
+            .subject("Verification Code")
+            .body(email_template.render().unwrap())
+            .expect("Rendern ist etzala hadde abbeid");      
+        
+        self.queue.push_back(CurrentEmail {
+            to: recv,
+            user_id,
+            code,
+            email,
+        });
+    }
+
+    pub async fn run(&mut self) {
+        let creds = Credentials::new(self.mailuser.clone(), self.mailpw.clone());
+
+        let mailer = SmtpTransport::relay(&self.smtp_server).unwrap_or_else(|_| panic!("Could not connect to SMTP server {}", self.smtp_server))
+            .credentials(creds)
+            .build();
+
+        loop {
+            if let Some(email) = self.queue.pop_front() {
+                mailer
+                    .send(&email.email).unwrap();
+            }
+            tracing::debug!("Nothing to do, waiting for new emails...");
+            tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+        }
+    }
+}
+
 
 /// Taken from poise source code thank you kangalioo <3
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]

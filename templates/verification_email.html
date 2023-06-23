@@ -1,0 +1,67 @@
+<html>
+<head>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 600px;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        h1 {
+            color: #333333;
+            text-align: center;
+        }
+
+        p {
+            color: #666666;
+            margin-bottom: 20px;
+        }
+
+        .hash-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .hash {
+            background-color: #eeeeee;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            cursor: pointer;
+            user-select: all;
+            transition: background-color 0.3s;
+            text-align: center;
+            margin-right: 10px;
+            flex-grow: 1;
+        }
+
+        .hash:hover {
+            background-color: #dddddd;
+        }
+
+        .copy-icon {
+            cursor: pointer;
+            font-size: 20px;
+            color: #666666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+      <h1>{{ botname }} Verification</h1>
+        <p>Here is your verification code</p>
+        <div class="hash-container">
+            <div class="hash">{{ code }}</div>
+       </div>
+    </div>
+</body>
+</html>

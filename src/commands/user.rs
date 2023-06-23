@@ -1,4 +1,4 @@
-use crate::{prelude::{Error, translations::Lang}, structs, Context};
+use crate::{prelude::{Error, translations::Lang}, structs, Context, utils::send_email};
 use poise::serenity_prelude as serenity;
 use crate::prelude::translations;
 
@@ -9,7 +9,8 @@ use crate::prelude::translations;
     track_edits,
     guild_only,
     name_localized("de", "verifizieren"),
-    description_localized("de", "Verifiziere dich mit deiner Studierenden E-Mail Adresse")
+    description_localized("de", "Verifiziere dich mit deiner Studierenden E-Mail Adresse"),
+    ephemeral
 )]
 pub async fn verify(
     ctx: Context<'_>,
@@ -21,18 +22,56 @@ pub async fn verify(
     #[name_localized("de", "email-adresse")]
     email: String,
 ) -> Result<(), Error> {
+    ctx.defer_ephemeral().await.map_err(Error::Serenity)?;
+
     let lang = match ctx.locale() {
         Some("de") => Lang::De,
         Some("ja") => Lang::Ja,
         _ => Lang::En,
     };
 
+  
     // check if email is valid
     if !email.ends_with("@stud.hs-kempten.de") {
         return Err(Error::WithMessage(
             lang.invalid_email().into()
         ));
     }
+
+    // check if email is already in use
+    let pool = &ctx.data().db;
+    let user = sqlx::query_as::<sqlx::Postgres, structs::VerifiedUsers>(
+        "SELECT * FROM verified_users WHERE user_email = $1",
+    )
+    .bind(&email)
+    .fetch_optional(pool)
+    .await
+    .map_err(Error::Database)?;
+
+    if user.is_some() {
+        return Err(Error::WithMessage(
+            lang.err_already_verified().into()
+        ));
+    }
+
+    ctx.send(|msg| {
+        msg.embed(|embed| {
+            embed.description(
+                "##  Code wurde versendet (es kann z.T einige Minuten dauern bis die Mail ankommt. Der HS-Mailserver ist nicht der Schnellste ;-)) \n\n\
+                "
+            );
+            embed
+        })
+    }).await.map_err(Error::Serenity)?;
+
+
+    let a = send_email(&email, ctx.author().id, &ctx.author().name).await;
+
+    ctx.say("Email sent! Please check your inbox")
+        .await
+        .map_err(Error::Serenity)?;
+
+    return Ok(());
 
     let mmail = crate::utils::find_discord_tag(&ctx.author().tag()).await;
 
