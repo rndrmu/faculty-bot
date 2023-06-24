@@ -1,6 +1,6 @@
-use crate::{prelude::{Error, translations::Lang}, structs, Context, utils::{send_email, CurrentEmail}};
+use crate::{prelude::{Error, translations::Lang}, structs, Context, utils::{CurrentEmail}};
 use poise::serenity_prelude as serenity;
-use crate::prelude::translations;
+
 
 /// Verify yourself with your student email address
 #[poise::command(
@@ -60,13 +60,13 @@ pub async fn verify(
     let code = crate::utils::generate_verification_code();
 
     let user_id = ctx.author().id;
-    ctx.data().email_codes.insert(user_id.clone(), code.clone()); // insert code into hashmap
+    ctx.data().email_codes.insert(user_id, code.clone()); // insert code into hashmap
 
     let emilia = ctx.data().email_task.clone();
 
     let email = CurrentEmail::new(
         email_used.clone(),
-        ctx.author().id.clone(),
+        ctx.author().id,
         ctx.author().name.clone(),
         code,
     );

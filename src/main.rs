@@ -220,5 +220,5 @@ async fn test(
     _ctx: Context<'_>,
     #[description = "Selected user"] _user: Option<serenity::User>,
 ) -> Result<(), prelude::Error> {
-    return Err(prelude::Error::WithMessage("This is a test".to_string()));
+    Err(prelude::Error::WithMessage("This is a test".to_string()))
 }

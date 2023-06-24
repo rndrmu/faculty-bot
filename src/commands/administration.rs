@@ -11,9 +11,9 @@ async fn executor_is_dev_or_admin(ctx: Context<'_>) -> Result<bool, Error> {
         || member.roles.contains(&ctx.data().config.roles.staffrole);
 
     if has_perms {
-        return Ok(true);
+        Ok(true)
     } else if member
-        .permissions(&ctx)
+        .permissions(ctx)
         .map_err(Error::Serenity)?
         .contains(Permissions::ADMINISTRATOR)
     {

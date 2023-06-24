@@ -1,6 +1,6 @@
 #![allow(unused_variables, unused_mut, dead_code)]
 
-use crate::{config::FacultyManagerMealplanConfig, prelude::Error, structs::{self, Rss}, Data};
+use crate::{config::FacultyManagerMealplanConfig, prelude::Error, structs::{self}, Data};
 use poise::serenity_prelude::{self as serenity, Mentionable};
 use rss::Channel;
 use chrono::{Datelike, Timelike};
@@ -135,7 +135,7 @@ pub async fn post_rss(ctx: serenity::Context, data: Data) -> Result<(), Error> {
                 let sql_res = sqlx::query_as::<sqlx::Postgres, structs::Rss>(
                     "SELECT * FROM posted_rss WHERE rss_title = $1 AND channel_id = $2",
                 )
-                .bind(&title)
+                .bind(title)
                 .bind(channel_id.0 as i64)
                 .fetch_optional(&db)
                 .await
@@ -257,7 +257,7 @@ async fn update_posts(
                             "UPDATE posted_rss SET message_id = $1 WHERE rss_title = $2 AND channel_id = $3",
                         )
                         .bind(msg.id.0 as i64)
-                        .bind(&title)
+                        .bind(title)
                         .bind(channel_id.0 as i64)
                         .execute(db)
                         .await
@@ -307,7 +307,7 @@ async fn post_item(
         if let Err(why) = sqlx::query(
             "INSERT INTO posted_rss (rss_title, channel_id, message_id) VALUES ($1, $2, $3)",
         )
-        .bind(&title)
+        .bind(title)
         .bind(channel_id.0 as i64)
         .bind(msg.id.0 as i64)
         .execute(db)

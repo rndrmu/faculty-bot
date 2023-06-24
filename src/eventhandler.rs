@@ -72,7 +72,7 @@ pub async fn event_listener(
             let xp_to_add =
                 msg.content.chars().count() as f64 / data.config.general.chars_for_level as f64;
             xp += xp_to_add;
-            let xp_float = xp as f64;
+            let xp_float = xp;
             // update xp in db
             sqlx::query("INSERT INTO user_xp (user_id, user_xp) VALUES ($1, $2) ON CONFLICT (user_id) DO UPDATE SET user_xp = $2")
                 .bind(user_id)
@@ -91,7 +91,7 @@ pub async fn event_listener(
 
             // check if lvl up and level is higher than previous
 
-            if (xp - xp_to_add) as f64 / 100. == (xp / 100.)  // check if lvl up
+            if (xp - xp_to_add) / 100. == (xp / 100.)  // check if lvl up
                 || user_data.user_level  // check that the new level is higher than the current
                     >= (xp / 100.) as i32
             {
@@ -244,9 +244,9 @@ pub async fn event_listener(
             if let serenity::Interaction::MessageComponent(button) = interaction {
                 match button.data.custom_id.as_str() {
                     "mensaplan_notify_button" => {
-                        give_user_mensaplan_role(&ctx, &button, data).await?
+                        give_user_mensaplan_role(ctx, button, data).await?
                     }
-                    _ => not_implemented(&ctx, &button).await?,
+                    _ => not_implemented(ctx, button).await?,
                 }
             }
         }

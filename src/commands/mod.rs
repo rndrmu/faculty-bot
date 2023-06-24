@@ -168,11 +168,11 @@ async fn help_all_commands(
                         if !arg_name.is_empty() {
                             arg_name.push_str(", ");
                         }
-                        arg_name.push_str(&name);
+                        arg_name.push_str(name);
                         if !arg_desc.is_empty() {
                             arg_desc.push_str(", ");
                         }
-                        arg_desc.push_str(&desc);
+                        arg_desc.push_str(desc);
                         (arg_name, arg_desc, required)
                     },
                 );

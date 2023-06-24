@@ -1,6 +1,6 @@
-use std::{collections::VecDeque, time::Duration};
 
-use poise::{serenity_prelude as serenity, futures_util::stream};
+
+use poise::{serenity_prelude as serenity};
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
     process::Command,
@@ -10,8 +10,8 @@ use crate::prelude::Error;
 
 use askama::Template;
 use lettre::{Transport, SmtpTransport, transport::smtp::authentication::Credentials, Message, message::header::ContentType};
-use lettre_email::{EmailBuilder, Email};
-use lettre::message::{header, MultiPart, SinglePart};
+
+
 
 /// Comverts a pdf file to a png buffer
 async fn pdf_to_png(filepath: std::path::PathBuf) -> Result<Vec<u8>, Error> {
@@ -100,7 +100,7 @@ pub async fn find_discord_tag(tag: &str) -> imap::error::Result<Option<String>> 
     // fetch message containing tag in subject
     let message = imap_session.search(format!("SUBJECT \"{}\"", tag))?;
 
-    if message.len() == 0 {
+    if message.is_empty() {
         return Ok(None);
     }
 
@@ -133,7 +133,7 @@ struct VerificationEmailTemplate<'a> {
     code: &'a str,
 }
 
-pub async fn send_email(to: impl Into<String>, user_id: serenity::UserId, username: impl Into<String>) -> Result<(), Error> {
+pub async fn send_email(to: impl Into<String>, _user_id: serenity::UserId, username: impl Into<String>) -> Result<(), Error> {
 
     let code = generate_verification_code();
     let mailuser = std::env::var("MAILUSER").unwrap();
