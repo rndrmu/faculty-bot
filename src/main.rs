@@ -137,14 +137,18 @@ async fn main() -> Result<(), prelude::Error> {
                 commands::user::verify(),
                 commands::user::leaderboard(),
                 commands::user::xp(),
+
                 commands::administration::getmail(),
                 commands::administration::run_command(),
                 commands::administration::set_xp(),
                 commands::administration::force_post_mensaplan(),
+                commands::administration::rule_command(),
+
                 commands::moderation::pin(),
                 commands::moderation::delete_message(),
                 commands::moderation::promote_user(),
                 commands::moderation::demote_user(),
+                
                 commands::help(),
             ],
             prefix_options: poise::PrefixFrameworkOptions {

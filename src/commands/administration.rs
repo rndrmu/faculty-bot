@@ -52,10 +52,18 @@ pub async fn getmail(
     .await
     .map_err(Error::Database)?;
 
+    // if tag ends in "#0000" the user has the pomelo experiment enabled
+    // we need to remove the discriminator from the tag and prefix it with "@"
+    let tag = if user.tag().ends_with("#0000") {
+        format!("@{}", user.tag().split("#").next().unwrap())
+    } else {
+        user.tag()
+    };
+
     if let Some(db_usr) = db_user {
         ctx.say(&format!(
             "{} is verified with {}",
-            user.tag(),
+            tag,
             db_usr.user_email
         ))
         .await

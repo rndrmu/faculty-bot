@@ -276,7 +276,8 @@ pub async fn leaderboard(ctx: Context<'_>) -> Result<(), Error> {
         leaderboard.push_str(&format!(
             "{}. {} - {} XP\n",
             i + 1,
-            user_discord.tag(),
+            // pomelo-fy affected users (replace #0000 discriminator with empty string and prefix username with an @)
+            user_discord.tag().replace("#0000", ""),
             user.user_xp
         ));
     }
