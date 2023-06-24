@@ -110,7 +110,7 @@ async fn main() -> Result<(), prelude::Error> {
         .await
         .map_err(prelude::Error::Database)?;
 
-    let (tx, rx) = tokio::sync::mpsc::channel::<CurrentEmail>(100);
+    let (tx, mut rx) = tokio::sync::mpsc::channel::<CurrentEmail>(100);
 
     let _ = tokio::spawn(async move {
         loop {
