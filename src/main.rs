@@ -112,10 +112,10 @@ async fn main() -> Result<(), prelude::Error> {
 
     let (tx, mut rx) = tokio::sync::mpsc::channel::<CurrentEmail>(100);
 
-    let _ = tokio::spawn(async move {
+    let _ = tokio::spawn(async move {   
+        tracing::info!("Starting email task");
         loop {
             if let Some(email) = rx.recv().await {
-                tracing::info!("Sending email to {}", email.to);
                 if let Err(y) = email.send().await {
                     tracing::error!("Failed to send email: {}", y); // we should probably let the user know that the email failed to send here
                 }

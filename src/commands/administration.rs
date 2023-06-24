@@ -226,7 +226,7 @@ pub async fn force_post_mensaplan(ctx: Context<'_>) -> Result<(), Error> {
     track_edits,
     rename = "rule",
     name_localized("de", "rule"),
-    description_localized("de", "Regel spezifische Befehle"),
+    description_localized("de", "Regelspezifische Befehle"),
     guild_only,
     check = "executor_is_dev_or_admin",
     subcommands("add", "remove", "list", "get", "edit", "post")
@@ -252,17 +252,23 @@ pub async fn rule_command(ctx: Context<'_>) -> Result<(), Error> {
 )]
 pub async fn add(
     ctx: Context<'_>,
-    #[description = "Rule number"] number: i64,
     #[description = "Rule text"] text: String,
 ) -> Result<(), Error> {
     let pool = &ctx.data().db;
 
+    let number = sqlx::query_as::<sqlx::Postgres, structs::Rules>(
+        "SELECT * FROM rules ORDER BY rule_number DESC LIMIT 1",
+    )
+    .fetch_optional(pool)
+    .await
+    .map_err(Error::Database)?;
+
     let rule = structs::Rules {
-        rule_number: number,
+        rule_number: number.map_or(1, |n| n.rule_number + 1),
         rule_text: text,
     };
 
-    sqlx::query("INSERT INTO rules (rule_number, rule_text) VALUES ($1, $2)")
+    sqlx::query("INSERT INTO rules (number, rule_text) VALUES ($1, $2)")
         .bind(rule.rule_number)
         .bind(rule.rule_text)
         .execute(pool)
