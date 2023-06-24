@@ -829,6 +829,7 @@ dependencies = [
  "base64 0.21.2",
  "blake3",
  "chrono",
+ "dashmap",
  "dotenv",
  "imap",
  "lettre 0.10.4",

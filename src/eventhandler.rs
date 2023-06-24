@@ -17,6 +17,9 @@ pub async fn event_listener(
             info!("Ready! Logged in as {}", data_about_bot.user.name);
             info!("Prefix: {:?}", fw.options.prefix_options.prefix.as_ref());
 
+            // start email task 
+
+
             // start mensa task & rss task if enabled so they can run in parallel
             if data.config.mealplan.post_mealplan {
                 info!("Mensaplan task started");

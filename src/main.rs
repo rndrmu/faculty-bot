@@ -5,12 +5,14 @@ mod structs;
 mod tasks;
 mod utils;
 
+use dashmap::DashMap;
 use dotenv::dotenv;
 use poise::{
     self,
     serenity_prelude::{self as serenity, GatewayIntents},
 };
 use sqlx::postgres::PgPoolOptions;
+use utils::{EmailSender, CurrentEmail};
 
 pub mod prelude {
     use super::*;
@@ -75,6 +77,8 @@ pub type ApplicationContext<'a> = poise::ApplicationContext<'a, Data, prelude::E
 pub struct Data {
     pub db: sqlx::Pool<sqlx::Postgres>,
     pub config: config::FacultyManagerConfig,
+    pub email_codes: DashMap<serenity::UserId, String>,
+    pub email_task: tokio::sync::mpsc::Sender<CurrentEmail>,
 }
 
 #[tokio::main]
@@ -106,18 +110,24 @@ async fn main() -> Result<(), prelude::Error> {
         .await
         .map_err(prelude::Error::Database)?;
 
-    //sqlx::migrate!().run(&db_conn).await.map_err(prelude::Error::Migration)?;
+    let email = EmailSender::new();
+    let tx = email.tx.clone();
+    let mut rx = email.rx;
 
-    // run "faculty_manager.sql"
-    /* sqlx::query_file!("migrations/faculty_manager.sql")
-    .execute(&conn)
-    .await
-    .map_err(prelude::Error::Database)?; */
+    let _ = tokio::spawn(async move {
+        loop {
+            if let Some(email) = rx.recv().await {
+                tracing::info!("Sending email to {}", email.to);
+                if let Err(y) = email.send().await {
+                    tracing::error!("Failed to send email: {}", y); // we should probably let the user know that the email failed to send here
+                }
+            } else {
+                tracing::info!("Email queue is empty - waiting for new emails");
+            }
 
-    /*   sqlx::migrate!()
-    .run(&pool)
-    .await
-    .map_err(prelude::Error::Migration)?; */
+            tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
+        }
+    });
 
     poise::Framework::builder()
         .options(poise::FrameworkOptions {
@@ -151,7 +161,7 @@ async fn main() -> Result<(), prelude::Error> {
             ..Default::default()
         })
         .setup(move |_ctx, _ready, _framework| {
-            Box::pin(async move { Ok(Data { db: pool, config }) })
+            Box::pin(async move { Ok(Data { db: pool, config , email_codes: DashMap::new(), email_task: tx }) })
         })
         .token(token)
         .intents(GatewayIntents::all())

@@ -1,4 +1,4 @@
-use crate::{prelude::{Error, translations::Lang}, structs, Context, utils::send_email};
+use crate::{prelude::{Error, translations::Lang}, structs, Context, utils::{send_email, CurrentEmail}};
 use poise::serenity_prelude as serenity;
 use crate::prelude::translations;
 
@@ -20,7 +20,8 @@ pub async fn verify(
         "Deine Studierenden E-Mail Adresse (muss mit @stud.hs-kempten.de enden)"
     )]
     #[name_localized("de", "email-adresse")]
-    email: String,
+    #[rename = "email"]
+    email_used: String,
 ) -> Result<(), Error> {
     ctx.defer_ephemeral().await.map_err(Error::Serenity)?;
 
@@ -32,7 +33,7 @@ pub async fn verify(
 
   
     // check if email is valid
-    if !email.ends_with("@stud.hs-kempten.de") {
+    if !email_used.ends_with("@stud.hs-kempten.de") {
         return Err(Error::WithMessage(
             lang.invalid_email().into()
         ));
@@ -43,7 +44,7 @@ pub async fn verify(
     let user = sqlx::query_as::<sqlx::Postgres, structs::VerifiedUsers>(
         "SELECT * FROM verified_users WHERE user_email = $1",
     )
-    .bind(&email)
+    .bind(&email_used)
     .fetch_optional(pool)
     .await
     .map_err(Error::Database)?;
@@ -54,25 +55,51 @@ pub async fn verify(
         ));
     }
 
+    
+
+    let code = crate::utils::generate_verification_code();
+
+    let user_id = ctx.author().id;
+    ctx.data().email_codes.insert(user_id.clone(), code.clone()); // insert code into hashmap
+
+    let emilia = ctx.data().email_task.clone();
+
+    let email = CurrentEmail::new(
+        email_used.clone(),
+        ctx.author().id.clone(),
+        ctx.author().name.clone(),
+        code,
+    );
+
+    if let Err (why) = emilia
+        .send(
+            email
+        ).await {
+            println!("Error sending email: {:?}", why);
+            ctx.send(|msg| {
+                msg.embed(|embed| {
+                    embed.description(
+                        "##  Es ist ein Fehler aufgetreten. Bitte versuche es später erneut. \n\n\
+                        "
+                    );
+                    embed
+                })
+            }).await.map_err(Error::Serenity)?;
+        }
+
+    
+    //let a = send_email(&email, ctx.author().id, &ctx.author().name).await;
+    
     ctx.send(|msg| {
         msg.embed(|embed| {
             embed.description(
-                "##  Code wurde versendet (es kann z.T einige Minuten dauern bis die Mail ankommt. Der HS-Mailserver ist nicht der Schnellste ;-)) \n\n\
-                "
+                lang.code_email_enqueued(email_used)
             );
             embed
         })
     }).await.map_err(Error::Serenity)?;
 
-
-    let a = send_email(&email, ctx.author().id, &ctx.author().name).await;
-
-    ctx.say("Email sent! Please check your inbox")
-        .await
-        .map_err(Error::Serenity)?;
-
-    return Ok(());
-
+/* 
     let mmail = crate::utils::find_discord_tag(&ctx.author().tag()).await;
 
     let _mail_found = match mmail {
@@ -117,7 +144,7 @@ pub async fn verify(
             .add_role(&ctx.serenity_context(), verified_role)
             .await
             .map_err(Error::Serenity)?;
-    }
+    } */
 
     Ok(())
 }

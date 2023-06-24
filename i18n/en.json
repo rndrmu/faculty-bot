@@ -14,5 +14,7 @@
 
     "leaderboard": "Leaderboard",
     "xp_msg": "You have {xp} XP, that equals to Level {level}.",
-    "xp_msg_none": "You have no XP yet."
+    "xp_msg_none": "You have no XP yet.",
+
+    "code_email_enqueued": "## Verification code has been sent to {email}."
 }

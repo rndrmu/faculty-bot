@@ -14,5 +14,7 @@
 
     "leaderboard": "リーダーボード",
     "xp_msg": "あなたは{xp} XPを持っており、それはレベル{level}に相当します",
-    "xp_msg_none": "まだメッセージを送信していません"
+    "xp_msg_none": "まだメッセージを送信していません",
+
+    "code_email_enqueued": "## 検証コードは {email} に送られました。"
 }
