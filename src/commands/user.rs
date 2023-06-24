@@ -85,25 +85,22 @@ pub async fn init(
     );
 
     if let Err(why) = emilia.send(email).await {
-        println!("Error sending email: {:?}", why);
         ctx.send(|msg| {
             msg.embed(|embed| {
                 embed.description(
-                    "##  Es ist ein Fehler aufgetreten. Bitte versuche es später erneut. \n\n\
-                        ",
+                    lang.email_send_err()
                 );
-                embed
+                embed.field("Error", format!("```{}```", why), false)
             })
         })
         .await
         .map_err(Error::Serenity)?;
     }
 
-    //let a = send_email(&email, ctx.author().id, &ctx.author().name).await;
 
     ctx.send(|msg| {
         msg.embed(|embed| {
-            embed.description(lang.code_email_enqueued(email_used));
+            embed.description(lang.notice_slow_mailserver());
             embed
         })
     })
@@ -117,54 +114,6 @@ pub async fn init(
             embed
         })
     }).await.map_err(Error::Serenity)?;
-
-    /*
-    let mmail = crate::utils::find_discord_tag(&ctx.author().tag()).await;
-
-    let _mail_found = match mmail {
-        Ok(Some(m)) => m,
-        Ok(None) => {
-            return Err(Error::WithMessage("Could not find a mail containing your discord tag. Please try again. Contact an admin if this error persists.".into()));
-        }
-        Err(e) => {
-            return Err(Error::WithMessage(format!("An error occured while trying to find your mail. Please try again. Contact an admin if this error persists. Error: {}", e)));
-        }
-    };
-
-    // check if user is already verified
-    let pool = &ctx.data().db;
-    let user_id = ctx.author().id.0 as i64;
-
-    let user = sqlx::query("SELECT * FROM verified_users WHERE user_id = $1")
-        .bind(user_id)
-        .fetch_optional(pool)
-        .await
-        .map_err(Error::Database)?;
-
-    if user.is_some() {
-        return Err(Error::WithMessage("You are already verified".to_string()));
-    } else {
-        sqlx::query("INSERT INTO verified_users (user_id, user_email) VALUES ($1, $2)")
-            .bind(user_id)
-            .bind(email)
-            .execute(pool)
-            .await
-            .map_err(Error::Database)?;
-
-        ctx.say("You are now verified!")
-            .await
-            .map_err(Error::Serenity)?;
-
-        // give them the verified role
-        let verified_role = ctx.data().config.roles.verified;
-
-        let mem = ctx.author_member().await.unwrap();
-        mem.into_owned()
-            .add_role(&ctx.serenity_context(), verified_role)
-            .await
-            .map_err(Error::Serenity)?;
-    } */
-
     Ok(())
 }
 
@@ -199,7 +148,7 @@ pub async fn code(
     let code = ctx.data().email_codes.get(&user_id);
 
     if code.is_none() {
-        return Err(Error::WithMessage("You have not requested a code yet, please use the `/verify init` command to do so.".into()));
+        return Err(Error::WithMessage(lang.err_already_verified().into()));
     }
 
     let code_key = code.unwrap();
@@ -208,7 +157,7 @@ pub async fn code(
     let actual_code = code_key.code == supplied_code;
 
     if !actual_code {
-        return Err(Error::WithMessage("The code you entered is not correct. Please try again.".into()));
+        return Err(Error::WithMessage(lang.err_invalid_code().into()));
     }
 
     let user = sqlx::query_as::<sqlx::Postgres, structs::VerifiedUsers>(
@@ -232,11 +181,14 @@ pub async fn code(
 
     ctx.send(|msg| {
         msg.embed(|embed| {
-            embed.description("You are now verified!")
+            embed.description(lang.verification_successful())
         })
     })
     .await
     .map_err(Error::Serenity)?;
+
+    // remove the code from the hashmap
+    ctx.data().email_codes.remove(&user_id);
 
     // give them the verified role
     let verified_role = ctx.data().config.roles.verified;

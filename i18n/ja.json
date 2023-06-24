@@ -3,8 +3,13 @@
     "email_not_found": "電子メールアドレスが見つかりません",
     "err_already_verified": "すでに確認されています",
     "verification_successful": "確認に成功しました",
+    "err_invalid_code": "無効なコード",
+
+
     "email_msg_header": "こんにちは {name},\n\n アカウントを確認するにはこのコードを入力してください。",
     "email_msg_footer": "\n\nこのメールに心当たりがない場合は、無視してください。",
+    "email_send_error": "メールを送信できませんでした。",
+    "notice_slow_mailserver": "## コードが送信されました（メールが届くまで数分かかることがあります。HSのメールサーバーは最速ではありません ;))",
 
     "message_pinned": "メッセージのピン留め",
     "message_unpinned": "メッセージのピン留め解除",

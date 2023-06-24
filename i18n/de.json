@@ -3,8 +3,13 @@
     "email_not_found": "E-Mail-Adresse nicht gefunden",
     "err_already_verified": "Dein Account ist bereits verifiziert.",
     "verification_successful": "Dein Account wurde erfolgreich verifiziert.",
+    "err_invalid_code": "Ungültiger Code.",
+
     "email_msg_header": "Hallo {name},\n\n bitte benutze folgenden Code um deinen Account zu verifizieren:",
     "email_msg_footer": "Wenn du diese E-Mail nicht angefordert hast, kannst du sie ignorieren.",
+    "email_send_err": "Beim Senden der E-Mail ist ein Fehler aufgetreten. Bitte versuche es später erneut.",
+    "notice_slow_mailserver": "## Code wurde versendet (es kann z.T einige Minuten dauern bis die Mail ankommt. Der HS-Mailserver ist nicht der Schnellste ;))",
+
 
     "message_pinned": "Nachricht angepinnt",
     "message_unpinned": "Nachricht gelöst",

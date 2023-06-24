@@ -3,8 +3,12 @@
     "email_not_found": "E-Mail Address not found",
     "err_already_verified": "You have already verified your E-Mail Address.",
     "verification_successful": "Your E-Mail Address has been verified successfully.",
+    "err_invalid_code": "Invalid verification code.",
+
     "email_msg_header": "Hello {name}, \n\n use the following code to verify your E-Mail Address:",
     "email_msg_footer": "If you did not request this verification, you can safely ignore this E-Mail.",
+    "email_send_err": "An error occured while sending the verification E-Mail. Please try again later.",
+    "notice_slow_mailserver": "## The code has been sent. It can take a few minutes for the email to reach you, HS email servers are not the fastest :^)",
 
     "message_pinned": "Message pinned",
     "message_unpinned": "Message unpinned",
