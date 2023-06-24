@@ -61,3 +61,9 @@ pub struct Rss {
     pub message_id: i64,
     pub channel_id: i64,
 }
+
+#[derive(Debug, Clone)]
+pub struct CodeEmailPair {
+    pub code: String,
+    pub email: String,
+}

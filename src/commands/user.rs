@@ -1,10 +1,26 @@
 use crate::{
     prelude::{translations::Lang, Error},
-    structs,
+    structs::{self, CodeEmailPair},
     utils::CurrentEmail,
     Context,
 };
 use poise::serenity_prelude as serenity;
+
+/// Base command for verification specific commands
+#[poise::command(
+    slash_command,
+    prefix_command,
+    track_edits,
+    rename = "verify",
+    name_localized("de", "verifizieren"),
+    description_localized("de", "Verifiziere dich mit deiner Studierenden E-Mail Adresse"),
+    guild_only,
+    subcommands("init", "code")
+)]
+pub async fn verify(ctx: Context<'_>) -> Result<(), Error> {
+    Ok(())
+}
+
 
 /// Verify yourself with your student email address
 #[poise::command(
@@ -12,11 +28,11 @@ use poise::serenity_prelude as serenity;
     prefix_command,
     track_edits,
     guild_only,
-    name_localized("de", "verifizieren"),
+    name_localized("de", "init"),
     description_localized("de", "Verifiziere dich mit deiner Studierenden E-Mail Adresse"),
-    ephemeral
+    ephemeral,
 )]
-pub async fn verify(
+pub async fn init(
     ctx: Context<'_>,
     #[description = "Your student email address (must be ending in @stud.hs-kempten.de)"]
     #[description_localized(
@@ -57,7 +73,7 @@ pub async fn verify(
     let code = crate::utils::generate_verification_code();
 
     let user_id = ctx.author().id;
-    ctx.data().email_codes.insert(user_id, code.clone()); // insert code into hashmap
+    ctx.data().email_codes.insert(user_id, CodeEmailPair { code: code.clone(), email: email_used.clone() });
 
     let emilia = ctx.data().email_task.clone();
 
@@ -65,7 +81,7 @@ pub async fn verify(
         email_used.clone(),
         ctx.author().id,
         ctx.author().name.clone(),
-        code,
+        code.clone(),
     );
 
     if let Err(why) = emilia.send(email).await {
@@ -93,6 +109,14 @@ pub async fn verify(
     })
     .await
     .map_err(Error::Serenity)?;
+
+    // send code for debug reasons
+    ctx.send(|msg| {
+        msg.embed(|embed| {
+            embed.description(format!("Your code is: {}", code));
+            embed
+        })
+    }).await.map_err(Error::Serenity)?;
 
     /*
     let mmail = crate::utils::find_discord_tag(&ctx.author().tag()).await;
@@ -140,6 +164,88 @@ pub async fn verify(
             .await
             .map_err(Error::Serenity)?;
     } */
+
+    Ok(())
+}
+
+/// Enter the verification code you received via email to verify yourself
+#[poise::command(
+    slash_command,
+    prefix_command,
+    track_edits,
+    guild_only,
+    name_localized("de", "code"),
+    description_localized("de", "Gib den Code ein, den du per E-Mail erhalten hast, um dich zu verifizieren"),
+    ephemeral
+)]
+pub async fn code(
+    ctx: Context<'_>,
+    #[description = "The code you received via email"]
+    #[description_localized("de", "Der Code, den du per E-Mail erhalten hast")]
+    #[rename = "code"]
+    supplied_code: String,
+) -> Result<(), Error> {
+    ctx.defer_ephemeral().await.map_err(Error::Serenity)?;
+
+    let lang = match ctx.locale() {
+        Some("de") => Lang::De,
+        Some("ja") => Lang::Ja,
+        _ => Lang::En,
+    };
+
+    let user_id = ctx.author().id;
+    let pool = &ctx.data().db;
+
+    let code = ctx.data().email_codes.get(&user_id);
+
+    if code.is_none() {
+        return Err(Error::WithMessage("You have not requested a code yet, please use the `/verify init` command to do so.".into()));
+    }
+
+    let code_key = code.unwrap();
+
+
+    let actual_code = code_key.code == supplied_code;
+
+    if !actual_code {
+        return Err(Error::WithMessage("The code you entered is not correct. Please try again.".into()));
+    }
+
+    let user = sqlx::query_as::<sqlx::Postgres, structs::VerifiedUsers>(
+        "SELECT * FROM verified_users WHERE user_id = $1",
+    )
+    .bind(user_id.0 as i64)
+    .fetch_optional(pool)
+    .await
+    .map_err(Error::Database)?;
+
+    if user.is_some() {
+        return Err(Error::WithMessage(lang.err_already_verified().into()));
+    }
+
+    sqlx::query("INSERT INTO verified_users (user_id, user_email) VALUES ($1, $2)")
+        .bind(user_id.0 as i64)
+        .bind(code_key.email.clone())
+        .execute(pool)
+        .await
+        .map_err(Error::Database)?;
+
+    ctx.send(|msg| {
+        msg.embed(|embed| {
+            embed.description("You are now verified!")
+        })
+    })
+    .await
+    .map_err(Error::Serenity)?;
+
+    // give them the verified role
+    let verified_role = ctx.data().config.roles.verified;
+
+    let mem = ctx.author_member().await.unwrap();
+    mem.into_owned()
+        .add_role(&ctx.serenity_context(), verified_role)
+        .await
+        .map_err(Error::Serenity)?;
 
     Ok(())
 }

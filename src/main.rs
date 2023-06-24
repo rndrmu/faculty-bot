@@ -12,6 +12,7 @@ use poise::{
     serenity_prelude::{self as serenity, GatewayIntents},
 };
 use sqlx::postgres::PgPoolOptions;
+use structs::CodeEmailPair;
 use utils::CurrentEmail;
 
 pub mod prelude {
@@ -77,7 +78,7 @@ pub type ApplicationContext<'a> = poise::ApplicationContext<'a, Data, prelude::E
 pub struct Data {
     pub db: sqlx::Pool<sqlx::Postgres>,
     pub config: config::FacultyManagerConfig,
-    pub email_codes: DashMap<serenity::UserId, String>,
+    pub email_codes: DashMap<serenity::UserId, CodeEmailPair>,
     pub email_task: tokio::sync::mpsc::Sender<CurrentEmail>,
 }
 

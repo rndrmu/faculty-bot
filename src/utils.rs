@@ -132,60 +132,17 @@ struct VerificationEmailTemplate<'a> {
     code: &'a str,
 }
 
-pub async fn send_email(
-    to: impl Into<String>,
-    _user_id: serenity::UserId,
-    username: impl Into<String>,
-) -> Result<(), Error> {
-    let code = generate_verification_code();
-    let mailuser = std::env::var("MAILUSER").unwrap();
-    let mailpw = std::env::var("MAILPW").unwrap();
-    let smtp_server = std::env::var("SMTP_SERVER").unwrap();
 
-    let email_template = VerificationEmailTemplate {
-        botname: "FacultyManager",
-        code: &code,
-    };
-
-    let receiver = format!("{} <{}>", username.into(), to.into());
-    let sender = format!("FacultyManager <{}>", mailuser);
-
-    let email = Message::builder()
-        .to(receiver
-            .parse()
-            .unwrap_or_else(|_| panic!("Invalid email address: {}", receiver)))
-        .from(
-            sender
-                .parse()
-                .unwrap_or_else(|_| panic!("Invalid email address: {}", sender)),
-        )
-        .header(ContentType::TEXT_HTML)
-        .subject("Verification Code")
-        .body(email_template.render().unwrap())
-        .expect("Rendern ist etzala hadde abbeid");
-
-    let creds = Credentials::new(mailuser, mailpw);
-
-    let mailer = SmtpTransport::relay(&smtp_server)
-        .unwrap_or_else(|_| panic!("Could not connect to SMTP server {}", smtp_server))
-        .credentials(creds)
-        .build();
-
-    mailer.send(&email).unwrap();
-
-    Ok(())
-}
 
 pub fn generate_verification_code() -> String {
     // alphanumeric
     use rand::Rng;
     let code: String = rand::thread_rng()
         .sample_iter(&rand::distributions::Alphanumeric)
-        .take(10)
+        .take(15)
         .map(char::from)
         .collect();
 
-    // encode with hex
     code
 }
 
