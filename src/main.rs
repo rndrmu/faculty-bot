@@ -159,7 +159,14 @@ async fn main() -> Result<(), prelude::Error> {
             ..Default::default()
         })
         .setup(move |_ctx, _ready, _framework| {
-            Box::pin(async move { Ok(Data { db: pool, config , email_codes: DashMap::new(), email_task: tx }) })
+            Box::pin(async move {
+                Ok(Data {
+                    db: pool,
+                    config,
+                    email_codes: DashMap::new(),
+                    email_task: tx,
+                })
+            })
         })
         .token(token)
         .intents(GatewayIntents::all())

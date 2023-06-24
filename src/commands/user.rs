@@ -1,6 +1,10 @@
-use crate::{prelude::{Error, translations::Lang}, structs, Context, utils::{CurrentEmail}};
+use crate::{
+    prelude::{translations::Lang, Error},
+    structs,
+    utils::CurrentEmail,
+    Context,
+};
 use poise::serenity_prelude as serenity;
-
 
 /// Verify yourself with your student email address
 #[poise::command(
@@ -31,12 +35,9 @@ pub async fn verify(
         _ => Lang::En,
     };
 
-  
     // check if email is valid
     if !email_used.ends_with("@stud.hs-kempten.de") {
-        return Err(Error::WithMessage(
-            lang.invalid_email().into()
-        ));
+        return Err(Error::WithMessage(lang.invalid_email().into()));
     }
 
     // check if email is already in use
@@ -50,12 +51,8 @@ pub async fn verify(
     .map_err(Error::Database)?;
 
     if user.is_some() {
-        return Err(Error::WithMessage(
-            lang.err_already_verified().into()
-        ));
+        return Err(Error::WithMessage(lang.err_already_verified().into()));
     }
-
-    
 
     let code = crate::utils::generate_verification_code();
 
@@ -71,35 +68,33 @@ pub async fn verify(
         code,
     );
 
-    if let Err (why) = emilia
-        .send(
-            email
-        ).await {
-            println!("Error sending email: {:?}", why);
-            ctx.send(|msg| {
-                msg.embed(|embed| {
-                    embed.description(
-                        "##  Es ist ein Fehler aufgetreten. Bitte versuche es später erneut. \n\n\
-                        "
-                    );
-                    embed
-                })
-            }).await.map_err(Error::Serenity)?;
-        }
+    if let Err(why) = emilia.send(email).await {
+        println!("Error sending email: {:?}", why);
+        ctx.send(|msg| {
+            msg.embed(|embed| {
+                embed.description(
+                    "##  Es ist ein Fehler aufgetreten. Bitte versuche es später erneut. \n\n\
+                        ",
+                );
+                embed
+            })
+        })
+        .await
+        .map_err(Error::Serenity)?;
+    }
 
-    
     //let a = send_email(&email, ctx.author().id, &ctx.author().name).await;
-    
+
     ctx.send(|msg| {
         msg.embed(|embed| {
-            embed.description(
-                lang.code_email_enqueued(email_used)
-            );
+            embed.description(lang.code_email_enqueued(email_used));
             embed
         })
-    }).await.map_err(Error::Serenity)?;
+    })
+    .await
+    .map_err(Error::Serenity)?;
 
-/* 
+    /*
     let mmail = crate::utils::find_discord_tag(&ctx.author().tag()).await;
 
     let _mail_found = match mmail {

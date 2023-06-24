@@ -1,9 +1,14 @@
 #![allow(unused_variables, unused_mut, dead_code)]
 
-use crate::{config::FacultyManagerMealplanConfig, prelude::Error, structs::{self}, Data};
+use crate::{
+    config::FacultyManagerMealplanConfig,
+    prelude::Error,
+    structs::{self},
+    Data,
+};
+use chrono::{Datelike, Timelike};
 use poise::serenity_prelude::{self as serenity, Mentionable};
 use rss::Channel;
-use chrono::{Datelike, Timelike};
 use tracing::info;
 
 struct TaskConfig {
@@ -20,7 +25,6 @@ struct TaskConfigRss {
     pub clean_regex: regex::Regex,
     pub timeout_hrs: u64,
 }
-
 
 /// Posts the mensa plan for the current week
 pub async fn post_mensaplan(ctx: serenity::Context, data: Data) -> Result<(), Error> {
@@ -142,7 +146,6 @@ pub async fn post_rss(ctx: serenity::Context, data: Data) -> Result<(), Error> {
                 .map_err(Error::Database)
                 .unwrap();
 
-
                 if let Some(exists) = sql_res {
                     info!("An already posted rss item");
                     let curr_chan = channel_id;
@@ -152,7 +155,7 @@ pub async fn post_rss(ctx: serenity::Context, data: Data) -> Result<(), Error> {
                         .map_err(Error::Serenity)
                         .unwrap();
                     let embed = msg.embeds.first().unwrap();
-    
+
                     let this_date = embed
                         .timestamp
                         .as_ref()
@@ -172,8 +175,9 @@ pub async fn post_rss(ctx: serenity::Context, data: Data) -> Result<(), Error> {
                             link,
                             description,
                             &item_date,
-                            &msg
-                        ).await?;
+                            &msg,
+                        )
+                        .await?;
                     }
                 } else {
                     // because let-else won't let me not return from this
@@ -187,14 +191,15 @@ pub async fn post_rss(ctx: serenity::Context, data: Data) -> Result<(), Error> {
                         link,
                         description,
                         &date.with_timezone(&chrono::Local),
-                    ).await {
+                    )
+                    .await
+                    {
                         tracing::error!("Failed to post rss: {:?}", why);
                     }
-                   
-            }
+                }
 
-            tracing::debug!("Posting in channel: {}", channel_id.0);
-            };
+                tracing::debug!("Posting in channel: {}", channel_id.0);
+            }
         }
 
         info!("Sleeping for {} hours", conf.timeout_hrs);
@@ -226,48 +231,48 @@ async fn update_posts(
     msg: &serenity::model::channel::Message,
 ) -> Result<(), Error> {
     let msg_result = channel_id
-                        .send_message(ctx, |f| {
-                            f.content(format!(
-                                "Der letzte Post im Planungsportal wurde aktualisiert · {}",
-                                title
-                            ))
-                            .embed(|e| {
-                                e.title(title)
-                                    .url(link)
-                                    .description(conf.clean_regex.replace_all(description, ""))
-                                    .timestamp(date_.to_rfc3339())
-                                    .color(0xb00b69)
-                            })
-                            .components(|c| {
-                                c.create_action_row(|a| {
-                                    a.create_button(|b| {
-                                        b.label("Open in Browser")
-                                            .style(serenity::ButtonStyle::Link)
-                                            .url(link)
-                                    })
-                                })
-                            })
-                            .reference_message(msg)
-                        })
-                        .await
-                        .map_err(Error::Serenity);
+        .send_message(ctx, |f| {
+            f.content(format!(
+                "Der letzte Post im Planungsportal wurde aktualisiert · {}",
+                title
+            ))
+            .embed(|e| {
+                e.title(title)
+                    .url(link)
+                    .description(conf.clean_regex.replace_all(description, ""))
+                    .timestamp(date_.to_rfc3339())
+                    .color(0xb00b69)
+            })
+            .components(|c| {
+                c.create_action_row(|a| {
+                    a.create_button(|b| {
+                        b.label("Open in Browser")
+                            .style(serenity::ButtonStyle::Link)
+                            .url(link)
+                    })
+                })
+            })
+            .reference_message(msg)
+        })
+        .await
+        .map_err(Error::Serenity);
 
-                    if let Ok(msg) = msg_result {
-                        if let Err(why) = sqlx::query(
-                            "UPDATE posted_rss SET message_id = $1 WHERE rss_title = $2 AND channel_id = $3",
-                        )
-                        .bind(msg.id.0 as i64)
-                        .bind(title)
-                        .bind(channel_id.0 as i64)
-                        .execute(db)
-                        .await
-                        .map_err(Error::Database)
-                        {
-                            tracing::error!("Failed to update rss message id: {:?}", why);
-                        }
-                    };
+    if let Ok(msg) = msg_result {
+        if let Err(why) = sqlx::query(
+            "UPDATE posted_rss SET message_id = $1 WHERE rss_title = $2 AND channel_id = $3",
+        )
+        .bind(msg.id.0 as i64)
+        .bind(title)
+        .bind(channel_id.0 as i64)
+        .execute(db)
+        .await
+        .map_err(Error::Database)
+        {
+            tracing::error!("Failed to update rss message id: {:?}", why);
+        }
+    };
 
-                    Ok(())
+    Ok(())
 }
 
 async fn post_item(
@@ -281,27 +286,27 @@ async fn post_item(
     date: &chrono::DateTime<chrono::Local>,
 ) -> Result<(), Error> {
     let msg = channel_id
-    .send_message(&ctx, |f| {
-        f.content(format!("Neue Nachricht im Planungsportal · {}", title))
-            .embed(|e| {
-                e.title(title)
-                    .url(link)
-                    .description(conf.clean_regex.replace_all(description, ""))
-                    .timestamp(date.to_rfc3339())
-                    .color(0xb00b69)
-            })
-            .components(|c| {
-                c.create_action_row(|a| {
-                    a.create_button(|b| {
-                        b.label("Open in Browser")
-                            .style(serenity::ButtonStyle::Link)
-                            .url(link)
+        .send_message(&ctx, |f| {
+            f.content(format!("Neue Nachricht im Planungsportal · {}", title))
+                .embed(|e| {
+                    e.title(title)
+                        .url(link)
+                        .description(conf.clean_regex.replace_all(description, ""))
+                        .timestamp(date.to_rfc3339())
+                        .color(0xb00b69)
+                })
+                .components(|c| {
+                    c.create_action_row(|a| {
+                        a.create_button(|b| {
+                            b.label("Open in Browser")
+                                .style(serenity::ButtonStyle::Link)
+                                .url(link)
+                        })
                     })
                 })
-            })
-    })
-    .await
-    .map_err(Error::Serenity);
+        })
+        .await
+        .map_err(Error::Serenity);
 
     if let Ok(msg) = msg {
         if let Err(why) = sqlx::query(
@@ -317,7 +322,6 @@ async fn post_item(
             tracing::error!("Failed to insert rss message id: {:?}", why);
         }
     }
-
 
     Ok(())
 }

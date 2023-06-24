@@ -443,9 +443,9 @@ pub async fn edit(
 )]
 pub async fn post(
     ctx: Context<'_>,
-    #[description = "Channel to post in"] 
+    #[description = "Channel to post in"]
     #[channel_types("Text")]
-    channel: Option<serenity::GuildChannel>
+    channel: Option<serenity::GuildChannel>,
 ) -> Result<(), Error> {
     let pool = &ctx.data().db;
 
@@ -462,7 +462,7 @@ pub async fn post(
 
     let rules_channel = match channel {
         Some(channel) => channel.id,
-        None => ctx.data().config.channels.rules
+        None => ctx.data().config.channels.rules,
     };
 
     rules_channel

@@ -1,6 +1,4 @@
-
-
-use poise::{serenity_prelude as serenity};
+use poise::serenity_prelude as serenity;
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
     process::Command,
@@ -9,9 +7,10 @@ use tokio::{
 use crate::prelude::Error;
 
 use askama::Template;
-use lettre::{Transport, SmtpTransport, transport::smtp::authentication::Credentials, Message, message::header::ContentType};
-
-
+use lettre::{
+    message::header::ContentType, transport::smtp::authentication::Credentials, Message,
+    SmtpTransport, Transport,
+};
 
 /// Comverts a pdf file to a png buffer
 async fn pdf_to_png(filepath: std::path::PathBuf) -> Result<Vec<u8>, Error> {
@@ -133,8 +132,11 @@ struct VerificationEmailTemplate<'a> {
     code: &'a str,
 }
 
-pub async fn send_email(to: impl Into<String>, _user_id: serenity::UserId, username: impl Into<String>) -> Result<(), Error> {
-
+pub async fn send_email(
+    to: impl Into<String>,
+    _user_id: serenity::UserId,
+    username: impl Into<String>,
+) -> Result<(), Error> {
     let code = generate_verification_code();
     let mailuser = std::env::var("MAILUSER").unwrap();
     let mailpw = std::env::var("MAILPW").unwrap();
@@ -149,30 +151,34 @@ pub async fn send_email(to: impl Into<String>, _user_id: serenity::UserId, usern
     let sender = format!("FacultyManager <{}>", mailuser);
 
     let email = Message::builder()
-        .to(receiver.parse().unwrap_or_else(|_| panic!("Invalid email address: {}", receiver)))
-        .from(sender.parse().unwrap_or_else(|_| panic!("Invalid email address: {}", sender)))
+        .to(receiver
+            .parse()
+            .unwrap_or_else(|_| panic!("Invalid email address: {}", receiver)))
+        .from(
+            sender
+                .parse()
+                .unwrap_or_else(|_| panic!("Invalid email address: {}", sender)),
+        )
         .header(ContentType::TEXT_HTML)
         .subject("Verification Code")
         .body(email_template.render().unwrap())
-        .expect("Rendern ist etzala hadde abbeid");      
-    
+        .expect("Rendern ist etzala hadde abbeid");
+
     let creds = Credentials::new(mailuser, mailpw);
 
-    let mailer = SmtpTransport::relay(&smtp_server).unwrap_or_else(|_| panic!("Could not connect to SMTP server {}", smtp_server))
+    let mailer = SmtpTransport::relay(&smtp_server)
+        .unwrap_or_else(|_| panic!("Could not connect to SMTP server {}", smtp_server))
         .credentials(creds)
         .build();
 
-
-    mailer
-        .send(&email).unwrap();
-
+    mailer.send(&email).unwrap();
 
     Ok(())
 }
 
 pub fn generate_verification_code() -> String {
-// alphanumeric
-use rand::Rng;
+    // alphanumeric
+    use rand::Rng;
     let code: String = rand::thread_rng()
         .sample_iter(&rand::distributions::Alphanumeric)
         .take(10)
@@ -180,11 +186,8 @@ use rand::Rng;
         .collect();
 
     // encode with hex
-   code
-
+    code
 }
-
-
 
 #[derive(Debug, Clone)]
 pub struct CurrentEmail {
@@ -195,11 +198,19 @@ pub struct CurrentEmail {
 }
 
 impl CurrentEmail {
-    pub fn new(to: impl Into<String>, user_id: serenity::UserId, username: impl Into<String>, code: impl Into<String>) -> Self {
+    pub fn new(
+        to: impl Into<String>,
+        user_id: serenity::UserId,
+        username: impl Into<String>,
+        code: impl Into<String>,
+    ) -> Self {
         let recv = to.into();
         let code = code.into();
         let receiver = format!("{} <{}>", username.into(), recv);
-        let sender = format!("FacultyManager <{}>", std::env::var("MAILUSER_ADDRESS").unwrap());
+        let sender = format!(
+            "FacultyManager <{}>",
+            std::env::var("MAILUSER_ADDRESS").unwrap()
+        );
 
         let email_template = VerificationEmailTemplate {
             botname: "FacultyManager",
@@ -207,13 +218,19 @@ impl CurrentEmail {
         };
 
         let email = Message::builder()
-            .to(receiver.parse().unwrap_or_else(|_| panic!("Invalid email address: {}", receiver)))
-            .from(sender.parse().unwrap_or_else(|_| panic!("Invalid email address: {}", sender)))
+            .to(receiver
+                .parse()
+                .unwrap_or_else(|_| panic!("Invalid email address: {}", receiver)))
+            .from(
+                sender
+                    .parse()
+                    .unwrap_or_else(|_| panic!("Invalid email address: {}", sender)),
+            )
             .header(ContentType::TEXT_HTML)
             .subject("Verification Code")
             .body(email_template.render().unwrap())
-            .expect("Rendern ist etzala hadde abbeid");      
-        
+            .expect("Rendern ist etzala hadde abbeid");
+
         Self {
             to: recv,
             user_id,
@@ -223,21 +240,26 @@ impl CurrentEmail {
     }
 
     pub async fn send(&self) -> Result<(), Error> {
-        let creds = Credentials::new(std::env::var("MAILUSER").unwrap(), std::env::var("MAILPW").unwrap());
+        let creds = Credentials::new(
+            std::env::var("MAILUSER").unwrap(),
+            std::env::var("MAILPW").unwrap(),
+        );
 
-        let mailer = SmtpTransport::starttls_relay(&std::env::var("SMTP_SERVER").unwrap()).unwrap_or_else(|_| panic!("Could not connect to SMTP server {}", std::env::var("SMTP_SERVER").unwrap()))
+        let mailer = SmtpTransport::starttls_relay(&std::env::var("SMTP_SERVER").unwrap())
+            .unwrap_or_else(|_| {
+                panic!(
+                    "Could not connect to SMTP server {}",
+                    std::env::var("SMTP_SERVER").unwrap()
+                )
+            })
             .credentials(creds)
             .build();
 
-        mailer
-            .send(&self.email).unwrap();
+        mailer.send(&self.email).unwrap();
 
         Ok(())
     }
 }
-
-
-
 
 /// Taken from poise source code thank you kangalioo <3
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
