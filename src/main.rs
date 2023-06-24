@@ -12,7 +12,7 @@ use poise::{
     serenity_prelude::{self as serenity, GatewayIntents},
 };
 use sqlx::postgres::PgPoolOptions;
-use utils::{EmailSender, CurrentEmail};
+use utils::CurrentEmail;
 
 pub mod prelude {
     use super::*;
@@ -110,9 +110,7 @@ async fn main() -> Result<(), prelude::Error> {
         .await
         .map_err(prelude::Error::Database)?;
 
-    let email = EmailSender::new();
-    let tx = email.tx.clone();
-    let mut rx = email.rx;
+    let (tx, rx) = tokio::sync::mpsc::channel::<CurrentEmail>(100);
 
     let _ = tokio::spawn(async move {
         loop {

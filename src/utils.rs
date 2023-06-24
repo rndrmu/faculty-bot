@@ -184,14 +184,7 @@ use rand::Rng;
 
 }
 
-#[derive(Debug)]
-pub struct EmailSender {
-    pub tx: tokio::sync::mpsc::Sender<CurrentEmail>,
-    pub rx: tokio::sync::mpsc::Receiver<CurrentEmail>,
-    mailuser: String,
-    mailpw: String,
-    smtp_server: String,
-}
+
 
 #[derive(Debug, Clone)]
 pub struct CurrentEmail {
@@ -243,89 +236,7 @@ impl CurrentEmail {
     }
 }
 
-impl EmailSender {
-    pub fn new() -> Self {
-        let (tx, rx) = tokio::sync::mpsc::channel(100);
-        Self {
-            tx,
-            rx,
-            mailuser: std::env::var("MAILUSER").unwrap(),
-            mailpw: std::env::var("MAILPW").unwrap(),
-            smtp_server: std::env::var("SMTP_SERVER").unwrap(),
-        }
-    }
 
-/*     pub fn send(&mut self, to: impl Into<String>, user_id: serenity::UserId, username: impl Into<String>, code: impl Into<String>) {
-        let recv = to.into();
-        let code = code.into();
-        let receiver = format!("{} <{}>", username.into(), recv);
-        let sender = format!("FacultyManager <{}>", self.mailuser);
-
-        let email_template = VerificationEmailTemplate {
-            botname: "FacultyManager",
-            code: &code,
-        };
-
-        let email = Message::builder()
-            .to(receiver.parse().unwrap_or_else(|_| panic!("Invalid email address: {}", receiver)))
-            .from(sender.parse().unwrap_or_else(|_| panic!("Invalid email address: {}", sender)))
-            .header(ContentType::TEXT_HTML)
-            .subject("Verification Code")
-            .body(email_template.render().unwrap())
-            .expect("Rendern ist etzala hadde abbeid");      
-
-        
-        
-        self.queue.push_back(CurrentEmail {
-            to: recv,
-            user_id,
-            code,
-            email,
-        });
-    } */
-
-    pub async fn run(&mut self) {
-        let creds = Credentials::new(self.mailuser.clone(), self.mailpw.clone());
-
-        let mailer = SmtpTransport::relay(&self.smtp_server).unwrap_or_else(|_| panic!("Could not connect to SMTP server {}", self.smtp_server))
-            .credentials(creds)
-            .build();
-
-        loop {
-            if let Some(email) = self.rx.recv().await {
-                tracing::debug!("Sending email to {}", email.to);
-                mailer
-                    .send(&email.email).unwrap();
-            }
-            tracing::info!("Nothing to do, waiting for new emails...");
-            tokio::time::sleep(std::time::Duration::from_secs(5)).await;
-        }
-    }
-}
-
-pub async fn email_sender(mut rx: tokio::sync::mpsc::Receiver<CurrentEmail>) {
-    tracing::info!("Starting email sender...");
-    let mailuser = std::env::var("MAILUSER").unwrap();
-    let mailpw = std::env::var("MAILPW").unwrap();
-    let smtp_server = std::env::var("SMTP_SERVER").unwrap();
-
-    let creds = Credentials::new(mailuser, mailpw);
-
-    let mailer = SmtpTransport::relay(&smtp_server).unwrap_or_else(|_| panic!("Could not connect to SMTP server {}", smtp_server))
-        .credentials(creds)
-        .build();
-
-    loop {
-        tracing::info!("Waiting for new emails...");
-        if let Some(email) = rx.recv().await {
-            tracing::debug!("Sending email to {}", email.to);
-            mailer
-                .send(&email.email).unwrap();
-        }
-        tracing::info!("Nothing to do, waiting for new emails...");
-        tokio::time::sleep(std::time::Duration::from_secs(5)).await;
-    }
-}
 
 
 /// Taken from poise source code thank you kangalioo <3
