@@ -1,46 +1,63 @@
-name: Build and Release
+name: Create Release Archive
 
 on:
   push:
     branches:
       - main
+      - '*'
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        rust-version: [stable]
+    runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Set up Rust ${{ matrix.rust-version }}
-        uses: actions-rs/toolchain@v1
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
         with:
-          toolchain: ${{ matrix.rust-version }}
+          node-version: '14' # Replace with your desired Node.js version
 
-      - name: Build Binary
-        run: cargo build --release
+      - name: Install dependencies
+        run: npm install
 
-      - name: Get Commit Hash
-        id: commit_hash
-        run: echo "::set-output name=hash::$(git rev-parse --short HEAD)"
+      - name: Create Archive
+        run: |
+          mkdir release
+          cp config.json release/
+          cp .env.example release/
+          cp docker-compose.yml release/
+          tar -czvf release.tar.gz release/
+
+      - name: Determine Release Type
+        id: release_type
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "::set-output name=type::release"
+          else
+            echo "::set-output name=type::prerelease"
+          fi
 
       - name: Create Release
+        id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v${{ steps.commit_hash.outputs.hash }}${{ matrix.os }}
-          release_name: ${{ steps.commit_hash.outputs.hash }}
-          draft: true
-          prerelease: false
-          files: |
-            target/release/my_binary
-            migrations/**
-            images/**
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
           body: |
-            ### Changelog
-            ${GITHUB_REF#refs/tags/}
+            Release ${{ github.ref }}
+          draft: false
+          prerelease: ${{ steps.release_type.outputs.type }}
+
+      - name: Upload Archive
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./release.tar.gz
+          asset_name: release.tar.gz
+          asset_content_type: application/gzip
