@@ -119,7 +119,7 @@ pub async fn event_listener(
                 .xp
                     .send_message(&ctx, |f| {
                         f.content(format!(
-                            "Congrats {}!. You leveled up to level {}",
+                            "Congrats {}!. You have reached level {}",
                             new_message.author.mention(),
                             lvl
                         ))
