@@ -54,7 +54,7 @@ jobs:
           release_name: Release ${{ steps.commit_sha.outputs.sha }} - ${{ steps.branch_name.outputs.name }}
           body: |
             Release ${{ steps.commit_sha.outputs.sha }} - ${{ steps.branch_name.outputs.name }}
-          draft: false
+          draft: true
           prerelease: ${{ steps.release_type.outputs.type }}
 
       - name: Upload Archive
