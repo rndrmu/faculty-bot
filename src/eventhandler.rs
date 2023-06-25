@@ -113,8 +113,10 @@ pub async fn event_listener(
 
                 let img = utils::show_levelup_image(&new_message.author, lvl as u16).await?;
 
-                new_message
-                    .channel_id
+                data
+                .config
+                .channels
+                .xp
                     .send_message(&ctx, |f| {
                         f.content(format!(
                             "Congrats {}!. You leveled up to level {}",

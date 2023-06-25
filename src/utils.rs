@@ -77,6 +77,8 @@ pub async fn show_levelup_image(user: &serenity::User, level: u16) -> Result<Vec
     }
 }
 
+#[deprecated]
+#[allow(dead_code)]
 /// Find discord tag in email
 pub async fn find_discord_tag(tag: &str) -> imap::error::Result<Option<String>> {
     let domain = std::env::var("SMTP_SERVER").unwrap();

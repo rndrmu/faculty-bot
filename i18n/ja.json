@@ -8,7 +8,7 @@
 
     "email_msg_header": "こんにちは {name},\n\n アカウントを確認するにはこのコードを入力してください。",
     "email_msg_footer": "\n\nこのメールに心当たりがない場合は、無視してください。",
-    "email_send_error": "メールを送信できませんでした。",
+    "email_send_err": "メールを送信できませんでした。",
     "notice_slow_mailserver": "## コードが送信されました（メールが届くまで数分かかることがあります。HSのメールサーバーは最速ではありません ;))",
 
     "message_pinned": "メッセージのピン留め",

@@ -17,6 +17,7 @@ use poise::serenity_prelude as serenity;
     guild_only,
     subcommands("init", "code")
 )]
+#[allow(unused_variables)]
 pub async fn verify(ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
