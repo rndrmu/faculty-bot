@@ -39,10 +39,10 @@ jobs:
             echo "::set-output name=type::prerelease"
           fi
 
-      - name: Get Branch Name
-        id: branch_name
+      - name: Get Short SHA
+        id: commit_sha
         run: |
-          echo "::set-output name=name::$(echo ${{ github.ref }} | sed -e 's/refs\/heads\///')"
+          echo "::set-output name=sha::$(git rev-parse --short HEAD)"
 
       - name: Create Release
         id: create_release
@@ -50,10 +50,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ steps.branch_name.outputs.name }}
-          release_name: Release ${{ steps.branch_name.outputs.name }}
+          tag_name: ${{ steps.commit_sha.outputs.sha }}
+          release_name: Release ${{ steps.commit_sha.outputs.sha }} - ${{ steps.branch_name.outputs.name }}
           body: |
-            Release ${{ steps.branch_name.outputs.name }}
+            Release ${{ steps.commit_sha.outputs.sha }} - ${{ steps.branch_name.outputs.name }}
           draft: false
           prerelease: ${{ steps.release_type.outputs.type }}
 
