@@ -3,7 +3,7 @@ name: Create Release Archive
 on:
   push:
     branches:
-      - main
+      - master
       - '*'
 
 jobs:
@@ -33,7 +33,7 @@ jobs:
       - name: Determine Release Type
         id: release_type
         run: |
-          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+          if [[ "${{ github.ref }}" == "refs/heads/master" ]]; then
             echo "::set-output name=type::release"
           else
             echo "::set-output name=type::prerelease"
