@@ -10,5 +10,12 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - ./migrations/faculty_manager.sql:/docker-entrypoint-initdb.d/init.sql
+  keydb:
+        image: eqalpha/keydb:latest
+        network_mode: "host"
+        command: keydb-server /etc/keydb/keydb.conf --server-threads 4
+        container_name: keydb-cache
+        volumes:
+            - ./migrations/redis.conf:/usr/local/etc/keydb/keydb.conf
 
     

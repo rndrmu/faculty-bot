@@ -6,6 +6,12 @@ use tokio::{
 
 use crate::prelude::Error;
 
+use askama::Template;
+use lettre::{
+    message::header::ContentType, transport::smtp::authentication::Credentials, Message,
+    SmtpTransport, Transport,
+};
+
 /// Comverts a pdf file to a png buffer
 async fn pdf_to_png(filepath: std::path::PathBuf) -> Result<Vec<u8>, Error> {
     let child = Command::new("convert")
@@ -71,6 +77,8 @@ pub async fn show_levelup_image(user: &serenity::User, level: u16) -> Result<Vec
     }
 }
 
+#[deprecated]
+#[allow(dead_code)]
 /// Find discord tag in email
 pub async fn find_discord_tag(tag: &str) -> imap::error::Result<Option<String>> {
     let domain = std::env::var("SMTP_SERVER").unwrap();
@@ -93,7 +101,7 @@ pub async fn find_discord_tag(tag: &str) -> imap::error::Result<Option<String>> 
     // fetch message containing tag in subject
     let message = imap_session.search(format!("SUBJECT \"{}\"", tag))?;
 
-    if message.len() == 0 {
+    if message.is_empty() {
         return Ok(None);
     }
 
@@ -117,6 +125,99 @@ pub async fn find_discord_tag(tag: &str) -> imap::error::Result<Option<String>> 
     imap_session.logout()?;
 
     Ok(Some(body))
+}
+
+#[derive(Template)]
+#[template(path = "verification_email.html")]
+struct VerificationEmailTemplate<'a> {
+    botname: &'a str,
+    code: &'a str,
+}
+
+
+
+pub fn generate_verification_code() -> String {
+    // alphanumeric
+    use rand::Rng;
+    let code: String = rand::thread_rng()
+        .sample_iter(&rand::distributions::Alphanumeric)
+        .take(15)
+        .map(char::from)
+        .collect();
+
+    code
+}
+
+#[derive(Debug, Clone)]
+pub struct CurrentEmail {
+    pub to: String,
+    pub user_id: serenity::UserId,
+    pub code: String,
+    pub email: Message,
+}
+
+impl CurrentEmail {
+    pub fn new(
+        to: impl Into<String>,
+        user_id: serenity::UserId,
+        username: impl Into<String>,
+        code: impl Into<String>,
+    ) -> Self {
+        let recv = to.into();
+        let code = code.into();
+        let receiver = format!("{} <{}>", username.into(), recv);
+        let sender = format!(
+            "FacultyManager <{}>",
+            std::env::var("MAILUSER_ADDRESS").unwrap()
+        );
+
+        let email_template = VerificationEmailTemplate {
+            botname: "FacultyManager",
+            code: &code,
+        };
+
+        let email = Message::builder()
+            .to(receiver
+                .parse()
+                .unwrap_or_else(|_| panic!("Invalid email address: {}", receiver)))
+            .from(
+                sender
+                    .parse()
+                    .unwrap_or_else(|_| panic!("Invalid email address: {}", sender)),
+            )
+            .header(ContentType::TEXT_HTML)
+            .subject("Verification Code")
+            .body(email_template.render().unwrap())
+            .expect("Rendern ist etzala hadde abbeid");
+
+        Self {
+            to: recv,
+            user_id,
+            code,
+            email,
+        }
+    }
+
+    pub async fn send(&self) -> Result<(), Error> {
+        let creds = Credentials::new(
+            std::env::var("MAILUSER").unwrap(),
+            std::env::var("MAILPW").unwrap(),
+        );
+
+        let mailer = SmtpTransport::starttls_relay(&std::env::var("SMTP_SERVER").unwrap())
+            .unwrap_or_else(|_| {
+                panic!(
+                    "Could not connect to SMTP server {}",
+                    std::env::var("SMTP_SERVER").unwrap()
+                )
+            })
+            .credentials(creds)
+            .build();
+
+        mailer.send(&self.email).unwrap();
+
+        Ok(())
+    }
 }
 
 /// Taken from poise source code thank you kangalioo <3

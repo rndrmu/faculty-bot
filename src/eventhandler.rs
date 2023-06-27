@@ -4,7 +4,7 @@ use crate::{
     tasks, utils, Data,
 };
 use poise::serenity_prelude::{self as serenity, AttachmentType, Mentionable};
-use tracing::info;
+use tracing::{debug, info};
 
 pub async fn event_listener(
     ctx: &serenity::Context,
@@ -17,16 +17,7 @@ pub async fn event_listener(
             info!("Ready! Logged in as {}", data_about_bot.user.name);
             info!("Prefix: {:?}", fw.options.prefix_options.prefix.as_ref());
 
-            /*
-            if data.config.rss_settings.post_rss {
-                info!("RSS task started");
-                tasks::post_rss(ctx.clone(), data.clone()).await?;
-            }
-
-            if data.config.mealplan.post_mealplan {
-                info!("Mensaplan task started");
-                tasks::post_mensaplan(ctx.clone(), data.clone()).await?;
-            } */
+            // start email task
 
             // start mensa task & rss task if enabled so they can run in parallel
             if data.config.mealplan.post_mealplan {
@@ -74,13 +65,13 @@ pub async fn event_listener(
 
             let mut xp = user_data.user_xp;
 
-            println!("{}: {}", new_message.author.name, xp);
+            debug!("{}: {}", new_message.author.name, xp);
 
             // add xp
             let xp_to_add =
                 msg.content.chars().count() as f64 / data.config.general.chars_for_level as f64;
             xp += xp_to_add;
-            let xp_float = xp as f64;
+            let xp_float = xp;
             // update xp in db
             sqlx::query("INSERT INTO user_xp (user_id, user_xp) VALUES ($1, $2) ON CONFLICT (user_id) DO UPDATE SET user_xp = $2")
                 .bind(user_id)
@@ -89,7 +80,7 @@ pub async fn event_listener(
                 .await
                 .map_err(Error::Database)?;
 
-            println!(
+            debug!(
                 "{}: {} -> {} | Level: {}",
                 new_message.author.name,
                 xp - xp_to_add,
@@ -99,7 +90,7 @@ pub async fn event_listener(
 
             // check if lvl up and level is higher than previous
 
-            if (xp - xp_to_add) as f64 / 100. == (xp / 100.)  // check if lvl up
+            if (xp - xp_to_add) / 100. == (xp / 100.)  // check if lvl up
                 || user_data.user_level  // check that the new level is higher than the current
                     >= (xp / 100.) as i32
             {
@@ -122,11 +113,13 @@ pub async fn event_listener(
 
                 let img = utils::show_levelup_image(&new_message.author, lvl as u16).await?;
 
-                new_message
-                    .channel_id
+                data
+                .config
+                .channels
+                .xp
                     .send_message(&ctx, |f| {
                         f.content(format!(
-                            "Congrats {}!. You leveled up to level {}",
+                            "Congrats {}!. You have reached level {}",
                             new_message.author.mention(),
                             lvl
                         ))
@@ -247,8 +240,79 @@ pub async fn event_listener(
                     .map_err(Error::Serenity)?;
             }
         }
+        poise::Event::InteractionCreate { interaction } => {
+            // filter out button interactions
+            if let serenity::Interaction::MessageComponent(button) = interaction {
+                match button.data.custom_id.as_str() {
+                    "mensaplan_notify_button" => {
+                        give_user_mensaplan_role(ctx, button, data).await?
+                    }
+                    _ => not_implemented(ctx, button).await?,
+                }
+            }
+        }
         _ => {}
     }
+
+    Ok(())
+}
+
+async fn give_user_mensaplan_role(
+    ctx: &serenity::Context,
+    button: &serenity::model::application::interaction::message_component::MessageComponentInteraction,
+    bot_data: &Data,
+) -> Result<(), Error> {
+    let role = bot_data.config.roles.mealplannotify;
+    let member = match button.member.as_ref() {
+        Some(m) => m,
+        None => {
+            button
+                .create_interaction_response(&ctx, |f| {
+                    f.kind(serenity::InteractionResponseType::ChannelMessageWithSource)
+                        .interaction_response_data(|f| {
+                            f.content("You need to be in a server to use this command")
+                        })
+                })
+                .await
+                .map_err(Error::Serenity)?;
+            return Ok(());
+        }
+    };
+
+    member
+        .clone() // literally why, go explod rustc
+        .add_role(&ctx, role)
+        .await
+        .map_err(Error::Serenity)?;
+
+    button
+        .create_interaction_response(&ctx, |f| {
+            f.kind(serenity::InteractionResponseType::ChannelMessageWithSource)
+                .interaction_response_data(|f| {
+                    f.content("You will now be notified when the mensaplan is updated, feel free to also follow this channel in your own server !!")
+                })
+        })
+        .await
+        .map_err(Error::Serenity)?;
+
+    Ok(())
+}
+
+/// Generic function to handle not implemented buttons
+async fn not_implemented(
+    ctx: &serenity::Context,
+    button: &serenity::model::application::interaction::message_component::MessageComponentInteraction,
+) -> Result<(), Error> {
+    button
+        .create_interaction_response(&ctx, |f: &mut serenity::CreateInteractionResponse| {
+            f.kind(serenity::InteractionResponseType::ChannelMessageWithSource)
+                .interaction_response_data(|f| {
+                    f.flags(serenity::model::application::interaction::MessageFlags::EPHEMERAL)
+                        .content("This button is not implemented yet, sorry :(")
+                })
+        })
+        .await
+        .map_err(Error::Serenity)?;
 
     Ok(())
 }

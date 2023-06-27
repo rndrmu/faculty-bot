@@ -1,0 +1,26 @@
+{
+    "invalid_email": "無効な電子メールアドレス",
+    "email_not_found": "電子メールアドレスが見つかりません",
+    "err_already_verified": "すでに確認されています",
+    "verification_successful": "確認に成功しました",
+    "err_invalid_code": "無効なコード",
+
+
+    "email_msg_header": "こんにちは {name},\n\n アカウントを確認するにはこのコードを入力してください。",
+    "email_msg_footer": "\n\nこのメールに心当たりがない場合は、無視してください。",
+    "email_send_err": "メールを送信できませんでした。",
+    "notice_slow_mailserver": "## コードが送信されました（メールが届くまで数分かかることがあります。HSのメールサーバーは最速ではありません ;))",
+
+    "message_pinned": "メッセージのピン留め",
+    "message_unpinned": "メッセージのピン留め解除",
+    "message_deleted": "メッセージの削除",
+    "user_promoted": "{user} がsemestermodに昇格。",
+    "user_demoted": "{user} がsemestermodから降格。",
+
+    "leaderboard": "リーダーボード",
+    "xp_msg": "あなたは{xp} XPを持っており、それはレベル{level}に相当します",
+    "xp_msg_none": "まだメッセージを送信していません",
+    "lvl_up": "おめでとう{user}、あなたはレベル{level}に到達しました！",
+
+    "code_email_enqueued": "## 検証コードは {email} に送られました。"
+}

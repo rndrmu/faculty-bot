@@ -14,9 +14,9 @@ async fn has_mod_or_semestermod(ctx: Context<'_>) -> Result<bool, Error> {
         .is_some();
 
     if has_perms {
-        return Ok(true);
+        Ok(true)
     } else if member
-        .permissions(&ctx)
+        .permissions(ctx)
         .map_err(Error::Serenity)?
         .contains(Permissions::MANAGE_MESSAGES)
     {

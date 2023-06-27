@@ -1,0 +1,68 @@
+name: Create Release Archive
+
+on:
+  push:
+    branches:
+      - master
+      - '*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14' # Replace with your desired Node.js version
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Create Archive
+        run: |
+          mkdir release
+          cp config.json release/
+          cp .env.example release/
+          cp docker-compose.yml release/
+          tar -czvf release.tar.gz release/
+
+      - name: Determine Release Type
+        id: release_type
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/master" ]]; then
+            echo "::set-output name=type::release"
+          else
+            echo "::set-output name=type::prerelease"
+          fi
+
+      - name: Get Short SHA
+        id: commit_sha
+        run: |
+          echo "::set-output name=sha::$(git rev-parse --short HEAD)"
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.commit_sha.outputs.sha }}
+          release_name: Release ${{ steps.commit_sha.outputs.sha }} - ${{ steps.branch_name.outputs.name }}
+          body: |
+            Release ${{ steps.commit_sha.outputs.sha }} - ${{ steps.branch_name.outputs.name }}
+          draft: true
+          prerelease: ${{ steps.release_type.outputs.type }}
+
+      - name: Upload Archive
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./release.tar.gz
+          asset_name: release.tar.gz
+          asset_content_type: application/gzip

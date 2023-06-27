@@ -5,12 +5,17 @@ mod structs;
 mod tasks;
 mod utils;
 
+
+use tracing_subscriber::prelude::*;
+use dashmap::DashMap;
 use dotenv::dotenv;
 use poise::{
     self,
     serenity_prelude::{self as serenity, GatewayIntents},
 };
 use sqlx::postgres::PgPoolOptions;
+use structs::CodeEmailPair;
+use utils::CurrentEmail;
 
 pub mod prelude {
     use super::*;
@@ -62,6 +67,10 @@ pub mod prelude {
             }
         }
     }
+
+    pub mod translations {
+        rosetta_i18n::include_translations!();
+    }
 }
 
 pub type Context<'a> = poise::Context<'a, Data, prelude::Error>;
@@ -71,6 +80,8 @@ pub type ApplicationContext<'a> = poise::ApplicationContext<'a, Data, prelude::E
 pub struct Data {
     pub db: sqlx::Pool<sqlx::Postgres>,
     pub config: config::FacultyManagerConfig,
+    pub email_codes: DashMap<serenity::UserId, CodeEmailPair>,
+    pub email_task: tokio::sync::mpsc::Sender<CurrentEmail>
 }
 
 #[tokio::main]
@@ -89,12 +100,25 @@ async fn main() -> Result<(), prelude::Error> {
         config.mealplan.post_on_day, config.mealplan.post_at_hour
     );
 
-    tracing_subscriber::fmt::init();
+    // setup tracing
+
+
+
+    // de-noise tracing by readin the RUST_LOG env var
+    let tracing_layer = tracing_subscriber::EnvFilter::try_from_default_env()
+        .or_else(|_| tracing_subscriber::EnvFilter::try_new("info"))
+        .unwrap();
+
+    tracing_subscriber::registry()
+    .with(tracing_subscriber::fmt::layer().with_filter(tracing_layer))
+    .init();
+
     tracing::info!("Starting up");
 
     let token = std::env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
 
     let db_url = std::env::var("DATABASE_URL").expect("Expected a database url in the environment");
+
 
     let pool = PgPoolOptions::new()
         .max_connections(15)
@@ -102,18 +126,23 @@ async fn main() -> Result<(), prelude::Error> {
         .await
         .map_err(prelude::Error::Database)?;
 
-    //sqlx::migrate!().run(&db_conn).await.map_err(prelude::Error::Migration)?;
 
-    // run "faculty_manager.sql"
-    /* sqlx::query_file!("migrations/faculty_manager.sql")
-    .execute(&conn)
-    .await
-    .map_err(prelude::Error::Database)?; */
+    let (tx, mut rx) = tokio::sync::mpsc::channel::<CurrentEmail>(100);
 
-    /*   sqlx::migrate!()
-    .run(&pool)
-    .await
-    .map_err(prelude::Error::Migration)?; */
+    let _ = tokio::spawn(async move {   
+        tracing::info!("Starting email task");
+        loop {
+            if let Some(email) = rx.recv().await {
+                if let Err(y) = email.send().await {
+                    tracing::error!("Failed to send email: {}", y); // we should probably let the user know that the email failed to send here
+                }
+            } else {
+                tracing::info!("Email queue is empty - waiting for new emails");
+            }
+
+            tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
+        }
+    });
 
     poise::Framework::builder()
         .options(poise::FrameworkOptions {
@@ -124,14 +153,18 @@ async fn main() -> Result<(), prelude::Error> {
                 commands::user::verify(),
                 commands::user::leaderboard(),
                 commands::user::xp(),
+
                 commands::administration::getmail(),
                 commands::administration::run_command(),
                 commands::administration::set_xp(),
                 commands::administration::force_post_mensaplan(),
+                commands::administration::rule_command(),
+
                 commands::moderation::pin(),
                 commands::moderation::delete_message(),
                 commands::moderation::promote_user(),
                 commands::moderation::demote_user(),
+                
                 commands::help(),
             ],
             prefix_options: poise::PrefixFrameworkOptions {
@@ -147,7 +180,14 @@ async fn main() -> Result<(), prelude::Error> {
             ..Default::default()
         })
         .setup(move |_ctx, _ready, _framework| {
-            Box::pin(async move { Ok(Data { db: pool, config }) })
+            Box::pin(async move {
+                Ok(Data {
+                    db: pool,
+                    config,
+                    email_codes: DashMap::new(),
+                    email_task: tx,
+                })
+            })
         })
         .token(token)
         .intents(GatewayIntents::all())
@@ -208,5 +248,5 @@ async fn test(
     _ctx: Context<'_>,
     #[description = "Selected user"] _user: Option<serenity::User>,
 ) -> Result<(), prelude::Error> {
-    return Err(prelude::Error::WithMessage("This is a test".to_string()));
+    Err(prelude::Error::WithMessage("This is a test".to_string()))
 }
