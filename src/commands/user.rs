@@ -31,7 +31,6 @@ pub async fn verify(ctx: Context<'_>) -> Result<(), Error> {
     guild_only,
     name_localized("de", "start"),
     description_localized("de", "Fordere einen Verifizierungscode an, indem du deine Studierenden E-Mail Adresse angibst"),
-    ephemeral,
 )]
 pub async fn init(
     ctx: Context<'_>,
@@ -44,7 +43,6 @@ pub async fn init(
     #[rename = "email"]
     email_used: String,
 ) -> Result<(), Error> {
-    ctx.defer_ephemeral().await.map_err(Error::Serenity)?;
 
     let lang = match ctx.locale() {
         Some("de") => Lang::De,
@@ -120,7 +118,6 @@ pub async fn init(
     guild_only,
     name_localized("de", "code"),
     description_localized("de", "Gib den Code ein, den du per E-Mail erhalten hast, um dich zu verifizieren"),
-    ephemeral
 )]
 pub async fn code(
     ctx: Context<'_>,
@@ -129,7 +126,6 @@ pub async fn code(
     #[rename = "code"]
     supplied_code: String,
 ) -> Result<(), Error> {
-    ctx.defer_ephemeral().await.map_err(Error::Serenity)?;
 
     let lang = match ctx.locale() {
         Some("de") => Lang::De,
@@ -182,9 +178,6 @@ pub async fn code(
     .await
     .map_err(Error::Serenity)?;
 
-    // remove the code from the hashmap
-    ctx.data().email_codes.remove(&user_id);
-
     // give them the verified role
     let verified_role = ctx.data().config.roles.verified;
 
@@ -193,6 +186,11 @@ pub async fn code(
         .add_role(&ctx.serenity_context(), verified_role)
         .await
         .map_err(Error::Serenity)?;
+
+
+    // remove the code from the hashmap
+    ctx.data().email_codes.remove(&user_id);
+
 
     Ok(())
 }
