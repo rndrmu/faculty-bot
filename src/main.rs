@@ -179,8 +179,13 @@ async fn main() -> Result<(), prelude::Error> {
             },
             ..Default::default()
         })
-        .setup(move |_ctx, _ready, _framework| {
+        .setup(move |ctx, _ready, framework| {
             Box::pin(async move {
+                if let Ok(_) = poise::builtins::register_globally(ctx, &framework.options().commands).await {
+                    tracing::info!("Successfully registered Application Commands globally");
+                } else {
+                    tracing::error!("Failed to register commands globally");
+                }
                 Ok(Data {
                     db: pool,
                     config,
