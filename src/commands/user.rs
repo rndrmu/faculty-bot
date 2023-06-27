@@ -6,7 +6,6 @@ use crate::{
 };
 use poise::serenity_prelude as serenity;
 
-use redis::AsyncCommands;
 
 /// Base command for verification specific commands
 #[poise::command(
