@@ -108,13 +108,7 @@ pub async fn init(
     .await
     .map_err(Error::Serenity)?;
 
-    // send code for debug reasons
-    ctx.send(|msg| {
-        msg.embed(|embed| {
-            embed.description(format!("Your code is: {}", code));
-            embed
-        })
-    }).await.map_err(Error::Serenity)?;
+
     Ok(())
 }
 
