@@ -5,6 +5,10 @@ mod structs;
 mod tasks;
 mod utils;
 
+use std::iter::Filter;
+
+use tracing_subscriber::prelude::*;
+use sentry_tracing::EventFilter;
 use dashmap::DashMap;
 use dotenv::dotenv;
 use poise::{
@@ -98,7 +102,19 @@ async fn main() -> Result<(), prelude::Error> {
         config.mealplan.post_on_day, config.mealplan.post_at_hour
     );
 
-    tracing_subscriber::fmt::init();
+    // setup tracing
+
+
+
+    // de-noise tracing by readin the RUST_LOG env var
+    let tracing_layer = tracing_subscriber::EnvFilter::try_from_default_env()
+        .or_else(|_| tracing_subscriber::EnvFilter::try_new("info"))
+        .unwrap();
+
+    tracing_subscriber::registry()
+    .with(tracing_subscriber::fmt::layer().with_filter(tracing_layer))
+    .init();
+
     tracing::info!("Starting up");
 
     let token = std::env::var("DISCORD_TOKEN").expect("Expected a token in the environment");

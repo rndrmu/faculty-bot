@@ -23,14 +23,14 @@ pub async fn verify(ctx: Context<'_>) -> Result<(), Error> {
 }
 
 
-/// Verify yourself with your student email address
+/// Request a verification code by providing your student email address
 #[poise::command(
     slash_command,
     prefix_command,
     track_edits,
     guild_only,
-    name_localized("de", "init"),
-    description_localized("de", "Verifiziere dich mit deiner Studierenden E-Mail Adresse"),
+    name_localized("de", "start"),
+    description_localized("de", "Fordere einen Verifizierungscode an, indem du deine Studierenden E-Mail Adresse angibst"),
     ephemeral,
 )]
 pub async fn init(
@@ -261,6 +261,12 @@ pub async fn xp(ctx: Context<'_>) -> Result<(), Error> {
     let pool = &ctx.data().db;
     let user_id = ctx.author().id.0 as i64;
 
+    let lang = match ctx.locale() {
+        Some("de") => Lang::De,
+        Some("ja") => Lang::Ja,
+        _ => Lang::En,
+    };
+
     let user = sqlx::query_as::<sqlx::Postgres, structs::UserXP>(
         "SELECT * FROM user_xp WHERE user_id = $1",
     )
@@ -272,10 +278,7 @@ pub async fn xp(ctx: Context<'_>) -> Result<(), Error> {
     if let Some(user) = user {
         ctx.send(|f| {
             f.embed(|e| {
-                e.description(format!(
-                    "You have {} xp, that equals to Level {}",
-                    user.user_xp, user.user_level
-                ))
+                e.description(lang.xp_msg(user.user_level, user.user_xp))
             });
             f
         })
@@ -283,7 +286,7 @@ pub async fn xp(ctx: Context<'_>) -> Result<(), Error> {
         .map_err(Error::Serenity)?;
     } else {
         ctx.send(|f| {
-            f.embed(|e| e.description("You have no XP yet"));
+            f.embed(|e| e.description(lang.xp_msg_none()));
             f
         })
         .await
