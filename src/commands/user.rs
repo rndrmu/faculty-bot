@@ -6,6 +6,8 @@ use crate::{
 };
 use poise::serenity_prelude as serenity;
 
+use redis::AsyncCommands;
+
 /// Base command for verification specific commands
 #[poise::command(
     slash_command,
@@ -189,7 +191,14 @@ pub async fn code(
 
 
     // remove the code from the hashmap
-    ctx.data().email_codes.remove(&user_id);
+    // this deadlocks the bot ?? What the fuck ?? fix ur code acri
+    let dashmap = ctx.data().email_codes.clone();
+    // delete user_id from dashmap
+    if let Some (skrr) = dashmap.remove(&user_id) {
+        tracing::debug!("deleted successfully!")
+    } else {
+        tracing::error!(":hmm:")
+    }
 
 
     Ok(())

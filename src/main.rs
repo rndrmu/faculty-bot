@@ -8,7 +8,6 @@ mod utils;
 use std::iter::Filter;
 
 use tracing_subscriber::prelude::*;
-use sentry_tracing::EventFilter;
 use dashmap::DashMap;
 use dotenv::dotenv;
 use poise::{
@@ -46,6 +45,8 @@ pub mod prelude {
         ParseIntError(std::num::ParseIntError),
         /// Rss error
         Rss(rss::Error),
+        /// Redis error
+        Redis(redis::RedisError),
         /// Idk bruh, don't ask me
         Unknown,
     }
@@ -62,6 +63,7 @@ pub mod prelude {
                 Error::Migration(e) => write!(f, "Migration error: {}", e),
                 Error::Serde(e) => write!(f, "Deserialization error: {}", e),
                 Error::ParseIntError(e) => write!(f, "ParseIntError: {}", e),
+                Error::Redis(e) => write!(f, "Redis Error: {}", e),
                 _ => write!(
                     f,
                     "Unknown error occured, ask the developers for more information"
@@ -83,7 +85,8 @@ pub struct Data {
     pub db: sqlx::Pool<sqlx::Postgres>,
     pub config: config::FacultyManagerConfig,
     pub email_codes: DashMap<serenity::UserId, CodeEmailPair>,
-    pub email_task: tokio::sync::mpsc::Sender<CurrentEmail>,
+    //pub email_codes: redis::Client,
+    pub email_task: tokio::sync::mpsc::Sender<CurrentEmail>
 }
 
 #[tokio::main]
@@ -121,11 +124,15 @@ async fn main() -> Result<(), prelude::Error> {
 
     let db_url = std::env::var("DATABASE_URL").expect("Expected a database url in the environment");
 
+   // let redis_url = std::env::var("REDIS_URL").expect("Expected a redis url in the environment");
+
     let pool = PgPoolOptions::new()
         .max_connections(15)
         .connect(&db_url)
         .await
         .map_err(prelude::Error::Database)?;
+
+    //let redis = redis::Client::open(redis_url).expect("Failed to connect to redis");
 
     let (tx, mut rx) = tokio::sync::mpsc::channel::<CurrentEmail>(100);
 

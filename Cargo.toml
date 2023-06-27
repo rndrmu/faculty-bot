@@ -40,5 +40,5 @@ lettre_email = "0.9.4"
 askama = "0.12.0"
 base64 = "0.21.2"
 dashmap = "5.4.0"
-sentry = "0.31.5"
-sentry-tracing = "0.31.5"
+
+redis = { version = "0.23.0", features = ["tokio-rustls-comp", "r2d2"] }
