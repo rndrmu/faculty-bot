@@ -74,7 +74,7 @@ pub async fn post_mensaplan(ctx: serenity::Context, data: Data) -> Result<(), Er
                                 c.create_action_row(|r| {
                                     r.create_button(|b| {
                                         b.style(serenity::ButtonStyle::Primary)
-                                            .label("Get Notified!")
+                                            .label("Get Notified on new plans!")
                                             .emoji(serenity::ReactionType::Custom {
                                                 animated: false,
                                                 id: serenity::EmojiId(960491878048993300),

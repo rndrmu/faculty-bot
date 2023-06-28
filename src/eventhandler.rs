@@ -289,7 +289,8 @@ async fn give_user_mensaplan_role(
         .create_interaction_response(&ctx, |f| {
             f.kind(serenity::InteractionResponseType::ChannelMessageWithSource)
                 .interaction_response_data(|f| {
-                    f.content("You will now be notified when the mensaplan is updated, feel free to also follow this channel in your own server !!")
+                    f.flags(serenity::model::application::interaction::MessageFlags::EPHEMERAL)
+                    .content("You will now be notified when the mensaplan is updated, feel free to also follow this channel in your own server !!")
                 })
         })
         .await
