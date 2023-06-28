@@ -133,8 +133,17 @@ pub async fn post_rss(ctx: serenity::Context, data: Data) -> Result<(), Error> {
                 let link = item.link().unwrap();
                 let description = item.description().unwrap();
                 let date_ = item.pub_date().unwrap();
+
                 // parse to chrono Local
                 let date = chrono::DateTime::parse_from_rfc2822(date_).unwrap();
+
+                // to combat spam, filter out old items (all before May 1st 2023)
+                if date < chrono::DateTime::parse_from_rfc2822("01 May 2023 00:00:00 +0200").unwrap()
+                {
+                    continue;
+                } else {
+                    tracing::info!("Found new rss item");
+                }
 
                 let sql_res = sqlx::query_as::<sqlx::Postgres, structs::Rss>(
                     "SELECT * FROM posted_rss WHERE rss_title = $1 AND channel_id = $2",
