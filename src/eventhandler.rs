@@ -3,8 +3,13 @@ use crate::{
     structs::{self},
     tasks, utils, Data,
 };
+
+
+
+use influxdb2::models::DataPoint;
 use poise::serenity_prelude::{self as serenity, AttachmentType, Mentionable};
 use tracing::{debug, info};
+
 
 pub async fn event_listener(
     ctx: &serenity::Context,
@@ -37,9 +42,22 @@ pub async fn event_listener(
                     tasks::post_rss(context, d).await.unwrap();
                 });
             }
+
+            // start logger task
+            info!("Logger task started");
+            let context = ctx.clone();
+            let fw = fw.shard_manager.clone();
+            let d = data.influx.clone();
+            tokio::spawn(async move {
+                tasks::log_latency_to_influx(&context, fw, &d).await.unwrap();
+            });
         }
 
         poise::Event::Message { new_message } => {
+            // log message event to influx
+
+
+
             // give xp
             if new_message.author.bot
                 || new_message
@@ -317,3 +335,5 @@ async fn not_implemented(
 
     Ok(())
 }
+
+

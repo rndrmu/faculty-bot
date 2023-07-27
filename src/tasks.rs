@@ -1,13 +1,16 @@
 #![allow(unused_variables, unused_mut, dead_code)]
 
+use std::sync::{Arc, Mutex};
+
 use crate::{
     config::FacultyManagerMealplanConfig,
     prelude::Error,
     structs::{self},
     Data,
 };
-use chrono::{Datelike, Timelike};
-use poise::serenity_prelude::{self as serenity, Mentionable};
+use chrono::{Datelike, Timelike, Duration};
+use influxdb2::models::DataPoint;
+use poise::serenity_prelude::{self as serenity, Mentionable, ShardId};
 use rss::Channel;
 use tracing::info;
 
@@ -333,4 +336,34 @@ async fn post_item(
     }
 
     Ok(())
+}
+
+
+
+pub async fn log_latency_to_influx(
+    ctx: &serenity::Context,
+    sm: Arc<serenity::Mutex<serenity::ShardManager>>,
+    influx: &influxdb2::Client,
+) -> Result<(), Error> {
+    loop {
+        info!("Logging latency to influx");
+        let shard = ctx.shard_id;
+        let locked = sm.lock().await;
+        let runner = locked.runners.lock().await;
+        let latency = runner.get(&ShardId(shard)).unwrap().latency.unwrap_or(std::time::Duration::from_nanos(0));
+
+
+        let points = vec![
+            DataPoint::builder("latency")
+                .field("latency", latency.as_millis() as i64)
+                .timestamp(chrono::Utc::now().timestamp_nanos())
+                .build()
+                .unwrap(),
+        ];
+
+
+        influx.write("faculty", futures::stream::iter(points)).await.unwrap();
+
+        tokio::time::sleep(tokio::time::Duration::from_secs(60)).await;
+    }
 }

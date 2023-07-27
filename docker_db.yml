@@ -17,5 +17,9 @@ services:
         container_name: keydb-cache
         volumes:
             - ./migrations/redis.conf:/usr/local/etc/keydb/keydb.conf
-
-    
+  
+  influxdb:
+    image: influxdb:latest
+    network_mode: "host"
+    ports:
+      - "8086:8086"

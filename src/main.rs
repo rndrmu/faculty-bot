@@ -5,7 +5,12 @@ mod structs;
 mod tasks;
 mod utils;
 
+use chrono::{DateTime, FixedOffset};
+use influxdb2::{Client, models::WriteDataPoint};
+use influxdb2::models::{Query, DataPoint};
 
+
+use tokio::stream;
 use tracing_subscriber::prelude::*;
 use dashmap::DashMap;
 use dotenv::dotenv;
@@ -44,6 +49,8 @@ pub mod prelude {
         ParseIntError(std::num::ParseIntError),
         /// Rss error
         Rss(rss::Error),
+        /// Regex error
+        Regex(regex::Error),
         /// Idk bruh, don't ask me
         Unknown,
     }
@@ -60,6 +67,8 @@ pub mod prelude {
                 Error::Migration(e) => write!(f, "Migration error: {}", e),
                 Error::Serde(e) => write!(f, "Deserialization error: {}", e),
                 Error::ParseIntError(e) => write!(f, "ParseIntError: {}", e),
+                Error::Rss(e) => write!(f, "Rss error: {}", e),
+                Error::Regex(e) => write!(f, "Regex error: {}", e),
                 _ => write!(
                     f,
                     "Unknown error occured, ask the developers for more information"
@@ -81,8 +90,12 @@ pub struct Data {
     pub db: sqlx::Pool<sqlx::Postgres>,
     pub config: config::FacultyManagerConfig,
     pub email_codes: DashMap<serenity::UserId, CodeEmailPair>,
-    pub email_task: tokio::sync::mpsc::Sender<CurrentEmail>
+    pub email_task: tokio::sync::mpsc::Sender<CurrentEmail>,
+    pub influx: influxdb2::Client,
 }
+
+
+
 
 #[tokio::main]
 async fn main() -> Result<(), prelude::Error> {
@@ -125,6 +138,14 @@ async fn main() -> Result<(), prelude::Error> {
         .connect(&db_url)
         .await
         .map_err(prelude::Error::Database)?;
+
+    let influx_host = "http://localhost:8086";
+    let influx_org = "acme";
+    let influx_bucket = "faculty";
+    let auth_token = std::env::var("INFLUX_TOKEN").expect("Expected a token in the environment");
+
+
+    let influx_client = influxdb2::Client::new("http://localhost:8086", "acme", auth_token);
 
 
     let (tx, mut rx) = tokio::sync::mpsc::channel::<CurrentEmail>(100);
@@ -191,6 +212,7 @@ async fn main() -> Result<(), prelude::Error> {
                     config,
                     email_codes: DashMap::new(),
                     email_task: tx,
+                    influx: influx_client,
                 })
             })
         })
