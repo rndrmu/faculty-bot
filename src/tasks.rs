@@ -142,7 +142,7 @@ pub async fn post_rss(ctx: serenity::Context, data: Data) -> Result<(), Error> {
 
                 // to combat spam, filter out old items (all before July 11th 2024)
                 if date
-                    < chrono::DateTime::parse_from_rfc2822("Wed, 11 Jul 2024 00:00:00 +0200")
+                    < chrono::DateTime::parse_from_rfc2822("Thu, 11 Jul 2024 00:00:00 +0200")
                         .unwrap()
                 {
                     continue;
