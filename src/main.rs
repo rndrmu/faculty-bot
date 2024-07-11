@@ -6,12 +6,9 @@ mod tasks;
 mod utils;
 
 use chrono::{DateTime, FixedOffset};
-use influxdb2::{Client, models::WriteDataPoint};
-use influxdb2::models::{Query, DataPoint};
+use influxdb2::models::{DataPoint, Query};
+use influxdb2::{models::WriteDataPoint, Client};
 
-
-use tokio::stream;
-use tracing_subscriber::prelude::*;
 use dashmap::DashMap;
 use dotenv::dotenv;
 use poise::{
@@ -20,6 +17,8 @@ use poise::{
 };
 use sqlx::postgres::PgPoolOptions;
 use structs::CodeEmailPair;
+use tokio::stream;
+use tracing_subscriber::prelude::*;
 use utils::CurrentEmail;
 
 pub mod prelude {
@@ -94,9 +93,6 @@ pub struct Data {
     pub influx: influxdb2::Client,
 }
 
-
-
-
 #[tokio::main]
 async fn main() -> Result<(), prelude::Error> {
     // only load .env file if it exists
@@ -115,16 +111,14 @@ async fn main() -> Result<(), prelude::Error> {
 
     // setup tracing
 
-
-
     // de-noise tracing by readin the RUST_LOG env var
     let tracing_layer = tracing_subscriber::EnvFilter::try_from_default_env()
         .or_else(|_| tracing_subscriber::EnvFilter::try_new("info"))
         .unwrap();
 
     tracing_subscriber::registry()
-    .with(tracing_subscriber::fmt::layer().with_filter(tracing_layer))
-    .init();
+        .with(tracing_subscriber::fmt::layer().with_filter(tracing_layer))
+        .init();
 
     tracing::info!("Starting up");
 
@@ -132,25 +126,22 @@ async fn main() -> Result<(), prelude::Error> {
 
     let db_url = std::env::var("DATABASE_URL").expect("Expected a database url in the environment");
 
-
     let pool = PgPoolOptions::new()
         .max_connections(15)
         .connect(&db_url)
         .await
         .map_err(prelude::Error::Database)?;
 
-    let influx_host = "http://localhost:8086";
-    let influx_org = "acme";
-    let influx_bucket = "faculty";
+    let influx_host = "https://us-east-1-1.aws.cloud2.influxdata.com";
+    let influx_org = "faculty_manager";
+    let influx_bucket = "faculty_manager";
     let auth_token = std::env::var("INFLUX_TOKEN").expect("Expected a token in the environment");
 
-
-    let influx_client = influxdb2::Client::new("http://localhost:8086", "acme", auth_token);
-
+    let influx_client = influxdb2::Client::new(influx_host, influx_org, auth_token);
 
     let (tx, mut rx) = tokio::sync::mpsc::channel::<CurrentEmail>(100);
 
-    let _ = tokio::spawn(async move {   
+    let _ = tokio::spawn(async move {
         tracing::info!("Starting email task");
         loop {
             if let Some(email) = rx.recv().await {
@@ -174,18 +165,15 @@ async fn main() -> Result<(), prelude::Error> {
                 commands::user::verify(),
                 commands::user::leaderboard(),
                 commands::user::xp(),
-
                 commands::administration::getmail(),
                 commands::administration::run_command(),
                 commands::administration::set_xp(),
                 commands::administration::force_post_mensaplan(),
                 commands::administration::rule_command(),
-
                 commands::moderation::pin(),
                 commands::moderation::delete_message(),
                 commands::moderation::promote_user(),
                 commands::moderation::demote_user(),
-                
                 commands::help(),
             ],
             prefix_options: poise::PrefixFrameworkOptions {
@@ -202,7 +190,9 @@ async fn main() -> Result<(), prelude::Error> {
         })
         .setup(move |ctx, _ready, framework| {
             Box::pin(async move {
-                if let Ok(_) = poise::builtins::register_globally(ctx, &framework.options().commands).await {
+                if let Ok(_) =
+                    poise::builtins::register_globally(ctx, &framework.options().commands).await
+                {
                     tracing::info!("Successfully registered Application Commands globally");
                 } else {
                     tracing::error!("Failed to register commands globally");

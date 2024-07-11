@@ -8,7 +8,7 @@ use crate::{
     structs::{self},
     Data,
 };
-use chrono::{Datelike, Timelike, Duration};
+use chrono::{Datelike, Duration, Timelike};
 use influxdb2::models::DataPoint;
 use poise::serenity_prelude::{self as serenity, Mentionable, ShardId};
 use rss::Channel;
@@ -140,8 +140,10 @@ pub async fn post_rss(ctx: serenity::Context, data: Data) -> Result<(), Error> {
                 // parse to chrono Local
                 let date = chrono::DateTime::parse_from_rfc2822(date_).unwrap();
 
-                // to combat spam, filter out old items (all before May 1st 2023)
-                if date < chrono::DateTime::parse_from_rfc2822("01 May 2023 00:00:00 +0200").unwrap()
+                // to combat spam, filter out old items (all before July 11th 2024)
+                if date
+                    < chrono::DateTime::parse_from_rfc2822("Wed, 11 Jul 2024 00:00:00 +0200")
+                        .unwrap()
                 {
                     continue;
                 } else {
@@ -194,6 +196,7 @@ pub async fn post_rss(ctx: serenity::Context, data: Data) -> Result<(), Error> {
                 } else {
                     // because let-else won't let me not return from this
                     // post
+                    println!("Posting new rss item");
                     if let Err(why) = post_item(
                         &ctx,
                         &db,
@@ -210,7 +213,7 @@ pub async fn post_rss(ctx: serenity::Context, data: Data) -> Result<(), Error> {
                     }
                 }
 
-                tracing::debug!("Posting in channel: {}", channel_id.0);
+                tracing::info!("Posting in channel: {}", channel_id.0);
             }
         }
 
@@ -338,8 +341,6 @@ async fn post_item(
     Ok(())
 }
 
-
-
 pub async fn log_latency_to_influx(
     ctx: &serenity::Context,
     sm: Arc<serenity::Mutex<serenity::ShardManager>>,
@@ -350,19 +351,22 @@ pub async fn log_latency_to_influx(
         let shard = ctx.shard_id;
         let locked = sm.lock().await;
         let runner = locked.runners.lock().await;
-        let latency = runner.get(&ShardId(shard)).unwrap().latency.unwrap_or(std::time::Duration::from_nanos(0));
+        let latency = runner
+            .get(&ShardId(shard))
+            .unwrap()
+            .latency
+            .unwrap_or(std::time::Duration::from_nanos(0));
 
+        let points = vec![DataPoint::builder("latency")
+            .field("latency", latency.as_millis() as i64)
+            .timestamp(chrono::Utc::now().timestamp_nanos())
+            .build()
+            .unwrap()];
 
-        let points = vec![
-            DataPoint::builder("latency")
-                .field("latency", latency.as_millis() as i64)
-                .timestamp(chrono::Utc::now().timestamp_nanos())
-                .build()
-                .unwrap(),
-        ];
-
-
-        influx.write("faculty", futures::stream::iter(points)).await.unwrap();
+        influx
+            .write("facultymanager", futures::stream::iter(points))
+            .await
+            .unwrap();
 
         tokio::time::sleep(tokio::time::Duration::from_secs(60)).await;
     }
