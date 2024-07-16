@@ -1,4 +1,4 @@
-FROM rustlang/rust:1.67 as builder
+FROM rust:1.79 as builder
 ENV RUSTFLAGS="-C target-cpu=native"
 
 
