@@ -506,49 +506,30 @@ pub async fn reverify(
     let pool = &ctx.data().db;
     let cutoff_date = chrono::NaiveDate::parse_from_str(&cutoff_date, "%Y-%m-%d").map_err(|_| Error::WithMessage("Invalid date format".to_string()))?;
 
-    let users = sqlx::query_as::<sqlx::Postgres, structs::VerifiedUsers>(
-        "SELECT * FROM verified_users WHERE verified_at <= $1"
-    )
-    .bind(cutoff_date)
-    .fetch_all(pool)
-    .await
-    .map_err(Error::Database)?;
-
-    let mut count = 0;
-
-    for user in users {
-        // unwrap is safe here, as this command can only be executed in a server 
-        let member = ctx.guild()
-            .unwrap()
-            // needed, as the user_id is stored as i64 in the database and UserId expects u64
-            .member(&ctx, serenity::UserId(user.user_id as u64))
-            .await
-            .map_err(Error::Serenity)?;
-
-        member
-            .user
-            .dm(&ctx, |m| {
-                m.embed(|e| {
-                    e.title("Re-Verifikation notwendig");
-                    e.description("Du musst dich erneut verifizieren, da deine Verifikation abgelaufen ist.");
-                    e
-                })
-            })
-            .await
-            .map_err(Error::Serenity)?;
-
-        count += 1;
-    }
+    // get all users that have joined before the cutoff date
+    let users = ctx.guild().unwrap().members(&ctx, None, None).await.map_err(Error::Serenity)?;
+    let users_to_reverify = users.iter().filter_map(|m| {
+        if m.joined_at.unwrap().date_naive() < cutoff_date {
+            Some(m)
+        } else {
+            None
+        }
+    });
 
     ctx.send(|m| {
-        m.embed(|e| {
-            e.title("Re-Verifikation");
-            e.description(format!("{} Nutzer wurden benachrichtigt", count));
+        m.content("Reverification broadcast started")
+        .embed(|e| {
+            e.title("Reverification Broadcast");
+            e.description(format!("Reverification broadcast started for users that joined before {}", cutoff_date));
             e
         })
-    })
-    .await
-    .map_err(Error::Serenity)?;
+        .embed(|e| {
+            e.title("Users to Reverify");
+            e.description(users_to_reverify.map(|u| format!("{}#{}", u.user.name, u.user.discriminator)).collect::<Vec<String>>().join("\n"));
+            e
+        })
+    }).await.map_err(Error::Serenity)?;
+    
    
     Ok(())
 }
