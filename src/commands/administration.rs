@@ -23,7 +23,7 @@ async fn executor_is_dev_or_admin(ctx: Context<'_>) -> Result<bool, Error> {
     }
 }
 
-/// Get the e-mail address a user has verified with
+/// get the e-mail address a user has verified with
 #[poise::command(
     slash_command,
     prefix_command,
@@ -31,7 +31,7 @@ async fn executor_is_dev_or_admin(ctx: Context<'_>) -> Result<bool, Error> {
     name_localized("de", "email"),
     description_localized(
         "de",
-        "Zeige die E-Mail Adresse, mit der ein Nutzer sich verifiziert hat"
+        "zeige die e-mail adresse, mit der ein nutzer sich verifiziert hat"
     ),
     ephemeral,
     required_permissions = "MANAGE_GUILD",
@@ -40,42 +40,35 @@ async fn executor_is_dev_or_admin(ctx: Context<'_>) -> Result<bool, Error> {
 )]
 pub async fn getmail(
     ctx: Context<'_>,
-    #[description = "Selected user"] user: serenity::User,
+    #[description = "selected user"] user: serenity::User,
 ) -> Result<(), Error> {
     let pool = &ctx.data().db;
     let uid = user.id.0 as i64;
-    let db_user = sqlx::query_as::<sqlx::Postgres, structs::VerifiedUsers>(
-        "SELECT * FROM verified_users WHERE user_id = $1",
+
+    let db_user = sqlx::query_as::<_, structs::VerifiedUsers>(
+        "select * from verified_users where user_id = $1"
     )
     .bind(uid)
     .fetch_optional(pool)
     .await
     .map_err(Error::Database)?;
 
-    // if tag ends in "#0000" the user has the pomelo experiment enabled
-    // we need to remove the discriminator from the tag and prefix it with "@"
     let tag = if user.tag().ends_with("#0000") {
-        format!("@{}", user.tag().split("#").next().unwrap())
+        format!("@{}", user.name)
     } else {
         user.tag()
     };
 
-    if let Some(db_usr) = db_user {
-        ctx.say(&format!(
-            "{} is verified with {}",
-            tag,
-            db_usr.user_email
-        ))
-        .await
-        .map_err(Error::Serenity)?;
-    } else {
-        ctx.say(&format!("{} is not verified", user.tag()))
-            .await
-            .map_err(Error::Serenity)?;
-    }
+    let response = match db_user {
+        Some(db_usr) => format!("{} is verified with {}", tag, db_usr.user_email),
+        None => format!("{} is not verified", tag),
+    };
+
+    ctx.say(&response).await.map_err(Error::Serenity)?;
 
     Ok(())
 }
+
 
 /// Run a command on the local machine
 #[poise::command(
@@ -451,7 +444,7 @@ pub async fn edit(
     track_edits,
     rename = "post",
     name_localized("de", "post"),
-    description_localized("de", "Poste die Regeln"),
+    description_localized("de", "Poste ein Regel-Embed im Regeln-Channel"),
     guild_only,
     check = "executor_is_dev_or_admin"
 )]
@@ -490,5 +483,72 @@ pub async fn post(
         .await
         .map_err(Error::Serenity)?;
 
+    Ok(())
+}
+
+/// Reverification command
+#[poise::command(
+    slash_command,
+    prefix_command,
+    track_edits,
+    rename = "reverify",
+    name_localized("de", "reverify"),
+    description_localized("de", "Sende einen Broadcast an diejenigen, die seit n Jahren verifiziert sind"),
+    guild_only,
+    check = "executor_is_dev_or_admin"
+)]
+pub async fn reverify(
+    ctx: Context<'_>, 
+    // format 2021-01-01
+    #[description = "Cutoff date for re-verification (YYYY-MM-DD)"]
+    cutoff_date: String
+) -> Result<(), Error> {
+    let pool = &ctx.data().db;
+    let cutoff_date = chrono::NaiveDate::parse_from_str(&cutoff_date, "%Y-%m-%d").map_err(|_| Error::WithMessage("Invalid date format".to_string()))?;
+
+    let users = sqlx::query_as::<sqlx::Postgres, structs::VerifiedUsers>(
+        "SELECT * FROM verified_users WHERE verified_at <= $1"
+    )
+    .bind(cutoff_date)
+    .fetch_all(pool)
+    .await
+    .map_err(Error::Database)?;
+
+    let mut count = 0;
+
+    for user in users {
+        // unwrap is safe here, as this command can only be executed in a server 
+        let member = ctx.guild()
+            .unwrap()
+            // needed, as the user_id is stored as i64 in the database and UserId expects u64
+            .member(&ctx, serenity::UserId(user.user_id as u64))
+            .await
+            .map_err(Error::Serenity)?;
+
+        member
+            .user
+            .dm(&ctx, |m| {
+                m.embed(|e| {
+                    e.title("Re-Verifikation notwendig");
+                    e.description("Du musst dich erneut verifizieren, da deine Verifikation abgelaufen ist.");
+                    e
+                })
+            })
+            .await
+            .map_err(Error::Serenity)?;
+
+        count += 1;
+    }
+
+    ctx.send(|m| {
+        m.embed(|e| {
+            e.title("Re-Verifikation");
+            e.description(format!("{} Nutzer wurden benachrichtigt", count));
+            e
+        })
+    })
+    .await
+    .map_err(Error::Serenity)?;
+   
     Ok(())
 }
