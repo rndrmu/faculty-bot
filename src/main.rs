@@ -160,8 +160,6 @@ async fn main() -> Result<(), prelude::Error> {
         .options(poise::FrameworkOptions {
             commands: vec![
                 register(),
-                age(),
-                test(),
                 commands::user::verify(),
                 commands::user::leaderboard(),
                 commands::user::xp(),
@@ -224,46 +222,4 @@ async fn register(ctx: Context<'_>) -> Result<(), prelude::Error> {
         .await
         .map_err(prelude::Error::Serenity)?;
     Ok(())
-}
-
-#[poise::command(slash_command, prefix_command)]
-async fn age(
-    ctx: Context<'_>,
-    #[description = "Selected user"] user: Option<serenity::User>,
-) -> Result<(), prelude::Error> {
-    ctx.defer_or_broadcast()
-        .await
-        .map_err(prelude::Error::Serenity)?;
-
-    let user = user.as_ref().unwrap_or_else(|| ctx.author());
-
-    let mensaplan = utils::fetch_mensaplan(&ctx.data().config.mealplan.url).await?;
-
-    ctx.send(|msg| {
-        msg.embed(|embed| {
-            embed.title("Age");
-            embed.description(format!(
-                "{}'s account was created <t:{}:R>",
-                user.name,
-                user.id.created_at().timestamp()
-            ));
-            embed
-        })
-        .attachment(serenity::AttachmentType::Bytes {
-            data: std::borrow::Cow::Borrowed(&mensaplan),
-            filename: "mensaplan.png".to_string(),
-        })
-    })
-    .await
-    .map_err(prelude::Error::Serenity)?;
-
-    Ok(())
-}
-
-#[poise::command(slash_command, prefix_command)]
-async fn test(
-    _ctx: Context<'_>,
-    #[description = "Selected user"] _user: Option<serenity::User>,
-) -> Result<(), prelude::Error> {
-    Err(prelude::Error::WithMessage("This is a test".to_string()))
 }

@@ -504,7 +504,7 @@ pub async fn reverify(
     cutoff_date: String
 ) -> Result<(), Error> {
     let pool = &ctx.data().db;
-    let cutoff_date = chrono::NaiveDate::parse_from_str(&cutoff_date, "%Y-%m-%d").map_err(|_| Error::WithMessage("Invalid date format".to_string()))?;
+    let cutoff_date = chrono::NaiveDate::parse_from_str(&cutoff_date, "%Y-%m-%d").map_err(|_| Error::WithMessage(format!("Invalid date format {}. Use YYYY-MM-DD", cutoff_date)))?;
 
     // get all users that have joined before the cutoff date
     let users = ctx.guild().unwrap().members(&ctx, None, None).await.map_err(Error::Serenity)?;
