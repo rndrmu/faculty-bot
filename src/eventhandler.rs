@@ -1,7 +1,9 @@
+use std::sync::Arc;
+
 use crate::{
     prelude::Error,
     structs::{self},
-    tasks, utils, Data,
+    tasks, utils::{self, generate_verification_code}, Data,
 };
 
 
@@ -256,6 +258,52 @@ pub async fn event_listener(
                 match button.data.custom_id.as_str() {
                     "mensaplan_notify_button" => {
                         give_user_mensaplan_role(ctx, button, data).await?
+                    },
+                    "reverify" => {
+                        let data = 
+                            poise::execute_modal_on_component_interaction::<ReverificationModal>(
+                                Arc::new(ctx.clone()),
+                                Arc::new(interaction.as_message_component().expect("Button interaction is always a message component").clone()),
+                                None, 
+                                None
+                            ).await.map_err(Error::Serenity)?;
+                        println!("Got data: {:?}", data);
+
+                        // verify that email is a student email
+                        
+                        let modal = data.unwrap_or(ReverificationModal {
+                            email: "".to_string()
+                        });
+
+                        
+                        if !modal.email.ends_with("stud.hs-kempten.de") {
+                            button
+                                .create_followup_message(&ctx, |f| {
+                                    f.flags(serenity::model::application::interaction::MessageFlags::EPHEMERAL)
+                                    .content("Das ist keine gültige Studenten Email, bitte gib eine Studenten Email der Hochschule Kempten an.")
+                                })
+                                .await
+                                .map_err(Error::Serenity)?;
+                            return Ok(());
+                        }
+
+                        // send email to user
+                        let code = generate_verification_code();
+                        let email = modal.email.clone();
+                        let user_id = button.user.id;
+                        let email = utils::CurrentEmail::new(email, user_id, button.user.name.clone(), code.clone());
+                        email.send().await?;
+
+                        // send message to user
+                        button
+                            .create_followup_message(&ctx, |f| {
+                                f.flags(serenity::model::application::interaction::MessageFlags::EPHEMERAL)
+                                .content(format!("Eine Email wurde an {} gesendet, bitte überprüfe deinen Posteingang und folge dann den Anweisungen in der email :)", modal.email))
+                            })
+                            .await
+                            .map_err(Error::Serenity)?;
+
+
                     }
                     _ => not_implemented(ctx, button).await?,
                 }
@@ -265,6 +313,14 @@ pub async fn event_listener(
     }
 
     Ok(())
+}
+
+#[derive(poise::Modal, Clone, Debug)]
+#[name = "Re-Verify Your Student Status"]
+pub struct ReverificationModal {
+    #[name = "Your Student Email"]
+    #[placeholder = "name.nachname@stud.hs-kempten.de"]
+    email: String,
 }
 
 async fn give_user_mensaplan_role(

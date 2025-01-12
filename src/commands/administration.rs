@@ -508,28 +508,51 @@ pub async fn reverify(
 
     // get all users that have joined before the cutoff date
     let users = ctx.guild().unwrap().members(&ctx, None, None).await.map_err(Error::Serenity)?;
+    println!("{:?}", users);
     let users_to_reverify = users.iter().filter_map(|m| {
-        if m.joined_at.unwrap().date_naive() < cutoff_date {
+        if m.joined_at.unwrap().date_naive() < cutoff_date && !m.user.bot {
             Some(m)
         } else {
             None
         }
-    });
+    }).collect::<Vec<_>>();
 
     ctx.send(|m| {
         m.content("Reverification broadcast started")
         .embed(|e| {
             e.title("Reverification Broadcast");
-            e.description(format!("Reverification broadcast started for users that joined before {}", cutoff_date));
-            e
-        })
-        .embed(|e| {
-            e.title("Users to Reverify");
-            e.description(users_to_reverify.map(|u| format!("{}#{}", u.user.name, u.user.discriminator)).collect::<Vec<String>>().join("\n"));
+            e.description(format!("Reverification broadcast started for users that joined before {}, messaginng {} users", cutoff_date, users_to_reverify.len()));
             e
         })
     }).await.map_err(Error::Serenity)?;
-    
-   
+
+    // send a message to all users that need to reverify
+    for user in  users_to_reverify {
+        user.user
+            .dm(&ctx, |message| {
+                message
+                    .content("🎓 **Reverification Required**")
+                    .embed(|embed| {
+                        embed
+                            .title("Student Status Verification")
+                            .description(
+                                "Hello! To confirm that you're still enrolled, please complete the reverification process. This helps us keep the server up to date for active students.",
+                            )
+                    })
+                    .components(|c| {
+                        c.create_action_row(|a| {
+                            a.create_button(|b| {
+                                b.style(serenity::ButtonStyle::Success)
+                                    .label("Reverify")
+                                    .custom_id("reverify")
+                            })
+                        })
+                    })
+            })
+            .await
+            .map_err(Error::Serenity)?;
+    }
     Ok(())
 }
+
+
