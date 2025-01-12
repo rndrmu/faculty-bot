@@ -77,55 +77,7 @@ pub async fn show_levelup_image(user: &serenity::User, level: u16) -> Result<Vec
     }
 }
 
-#[deprecated]
-#[allow(dead_code)]
-/// Find discord tag in email
-pub async fn find_discord_tag(tag: &str) -> imap::error::Result<Option<String>> {
-    let domain = std::env::var("SMTP_SERVER").unwrap();
-    let username = std::env::var("MAILUSER").unwrap();
-    let password = std::env::var("MAILPW").unwrap();
-    let tls = native_tls::TlsConnector::builder().build().unwrap();
-    // we pass in the domain twice to check that the server's TLS
-    // certificate is valid for the domain we're connecting to.
-    let client = imap::connect((domain.clone(), 993), domain, &tls).unwrap();
 
-    // the client we have here is unauthenticated.
-    // to do anything useful with the e-mails, we need to log in
-    let mut imap_session = client.login(username, password).map_err(|e| e.0)?;
-
-    // we want to fetch the first email in the INBOX mailbox
-    imap_session.select("INBOX")?;
-
-    println!("Selected INBOX");
-
-    // fetch message containing tag in subject
-    let message = imap_session.search(format!("SUBJECT \"{}\"", tag))?;
-
-    if message.is_empty() {
-        return Ok(None);
-    }
-
-    let message = message.iter().next().unwrap();
-
-    // fetch the email body
-    let messages = imap_session.fetch(message.to_string(), "RFC822")?;
-
-    let message = if let Some(m) = messages.iter().next() {
-        m
-    } else {
-        return Ok(None);
-    };
-
-    let body = message.body().expect("message did not have a body!");
-    let body = std::str::from_utf8(body)
-        .expect("message was not valid utf-8")
-        .to_string();
-
-    // be nice to the server and log out
-    imap_session.logout()?;
-
-    Ok(Some(body))
-}
 
 #[derive(Template)]
 #[template(path = "verification_email.html")]
@@ -168,7 +120,7 @@ impl CurrentEmail {
         let receiver = format!("{} <{}>", username.into(), recv);
         let sender = format!(
             "FacultyManager <{}>",
-            std::env::var("MAILUSER_ADDRESS").unwrap()
+            std::env::var("SEND_FROM_ADDRESS").unwrap()
         );
 
         let email_template = VerificationEmailTemplate {
@@ -200,8 +152,8 @@ impl CurrentEmail {
 
     pub async fn send(&self) -> Result<(), Error> {
         let creds = Credentials::new(
-            std::env::var("MAILUSER").unwrap(),
-            std::env::var("MAILPW").unwrap(),
+            std::env::var("MAIL_USERNAME").unwrap(),
+            std::env::var("MAIL_PASSWORD").unwrap(),
         );
 
         let mailer = SmtpTransport::starttls_relay(&std::env::var("SMTP_SERVER").unwrap())
