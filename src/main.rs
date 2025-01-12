@@ -126,9 +126,9 @@ async fn main() -> Result<(), prelude::Error> {
 
     tracing::info!("Starting up");
 
-    let token = std::env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
+    let token = std::env::var("DISCORD_TOKEN").expect("Expected `DISCORD_TOKEN` in the environment");
 
-    let db_url = std::env::var("DATABASE_URL").expect("Expected a database url in the environment");
+    let db_url = std::env::var("DATABASE_URL").expect("Expected `DATABASE_URL` in the environment");
 
     let pool = PgPoolOptions::new()
         .max_connections(15)
@@ -139,7 +139,7 @@ async fn main() -> Result<(), prelude::Error> {
     let influx_host = "https://us-east-1-1.aws.cloud2.influxdata.com";
     let influx_org = "faculty_manager";
     let influx_bucket = "faculty_manager";
-    let auth_token = std::env::var("INFLUX_TOKEN").expect("Expected a token in the environment");
+    let auth_token = std::env::var("INFLUX_TOKEN").expect("Expected `INFLUX_TOKEN` in the environment");
 
     let influx_client = influxdb2::Client::new(influx_host, influx_org, auth_token);
 

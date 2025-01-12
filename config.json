@@ -27,7 +27,7 @@
     "xpScalingFactor": 0.5
   },
   "mealplan": {
-    "postMealplan": true,
+    "postMealplan": false,
     "url": "http://www.max-manager.de/daten-extern/augsburg/pdf/wochenplaene/hs-kempten/aktuell.pdf",
     "check": 30,
     "postOnDay": "Monday",
@@ -41,7 +41,7 @@
     }
   },
   "rssSettings": {
-    "postRss": true,
+    "postRss": false,
     "rssFeedData": {
       "1111387940359262299": "https://infotresen.if.hs-kempten.de/dokuwiki/lib/plugins/feed/feed.php?plugin=tag&fn=getTopic&ns=announcements&tag=IF+BA+ALL&title=Thema",
       "1070021986849390623": "https://infotresen.if.hs-kempten.de/dokuwiki/lib/plugins/feed/feed.php?plugin=tag&fn=getTopic&ns=announcements&tag=GE+BA+ALL&title=Thema",
