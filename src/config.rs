@@ -56,6 +56,7 @@ pub struct FacultyManagerRoleConfig {
 pub struct FacultyManagerGeneralConfig {
     pub adstimeout: i64,
     pub chars_for_level: i64,
+    pub xp_scaling_factor: f64,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

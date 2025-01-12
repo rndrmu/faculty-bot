@@ -54,92 +54,83 @@ pub async fn event_listener(
         }
 
         poise::Event::Message { new_message } => {
-            // log message event to influx
-
-
-
-            // give xp
+            // skip bots and messages starting with the prefix
             if new_message.author.bot
                 || new_message
                     .content
-                    .starts_with(fw.options.prefix_options.prefix.as_ref().unwrap())
+                    .starts_with(fw.options.prefix_options.prefix.as_deref().unwrap_or_default())
             {
                 return Ok(());
             }
-            let msg = new_message.clone();
+        
             let user_id = i64::from(new_message.author.id);
-
-            // get xp from db
+            let content_len = new_message.content.chars().count();
+        
             let mut pool = data.db.acquire().await.map_err(Error::Database)?;
-
-            let user_data = sqlx::query_as::<sqlx::Postgres, structs::UserXP>(
-                "SELECT * FROM user_xp WHERE user_id = $1",
+        
+            // fetch user data or create defaults
+            let user_data = sqlx::query_as::<_, structs::UserXP>(
+                "SELECT * FROM user_xp WHERE user_id = $1"
             )
             .bind(user_id)
             .fetch_optional(&mut pool)
             .await
             .map_err(Error::Database)?
-            .unwrap_or_default();
-
-            let mut xp = user_data.user_xp;
-
-            debug!("{}: {}", new_message.author.name, xp);
-
-            // add xp
-            let xp_to_add =
-                msg.content.chars().count() as f64 / data.config.general.chars_for_level as f64;
-            xp += xp_to_add;
-            let xp_float = xp;
-            // update xp in db
-            sqlx::query("INSERT INTO user_xp (user_id, user_xp) VALUES ($1, $2) ON CONFLICT (user_id) DO UPDATE SET user_xp = $2")
-                .bind(user_id)
-                .bind(xp_float)
-                .execute(&mut pool)
-                .await
-                .map_err(Error::Database)?;
-
+            .unwrap_or_else(|| structs::UserXP {
+                user_id,
+                user_xp: 0.0,
+                user_level: 0,
+            });
+        
+            debug!("{}: {}", new_message.author.name, user_data.user_xp);
+        
+            // scaling formula: xp = base_xp * (1 + scale_factor * level)
+            let scaling_factor = data.config.general.xp_scaling_factor; // e.g., 10% increase per level
+            let base_xp = content_len as f64 / data.config.general.chars_for_level as f64;
+            let xp_to_add = base_xp / (1.0 + scaling_factor * (user_data.user_level as f64).ln());
+        
+            // update xp and save to db
+            let new_xp = user_data.user_xp + xp_to_add;
+            sqlx::query(
+                "INSERT INTO user_xp (user_id, user_xp) VALUES ($1, $2)
+                ON CONFLICT (user_id) DO UPDATE SET user_xp = $2"
+            )
+            .bind(user_id)
+            .bind(new_xp)
+            .execute(&mut pool)
+            .await
+            .map_err(Error::Database)?;
+        
             debug!(
                 "{}: {} -> {} | Level: {}",
                 new_message.author.name,
-                xp - xp_to_add,
-                xp,
+                user_data.user_xp,
+                new_xp,
                 user_data.user_level
             );
-
-            // check if lvl up and level is higher than previous
-
-            if (xp - xp_to_add) / 100. == (xp / 100.)  // check if lvl up
-                || user_data.user_level  // check that the new level is higher than the current
-                    >= (xp / 100.) as i32
-            {
-                return Ok(());
-            } else {
-                // get lvl from xp
-                let lvl = (xp / 100.) as i32;
-
-                if lvl == 0 {
-                    return Ok(());
-                }
-
-                // update level in db
-                sqlx::query("INSERT INTO user_xp (user_id, user_level) VALUES ($1, $2) ON CONFLICT (user_id) DO UPDATE SET user_level = $2")
-                    .bind(user_id)
-                    .bind(lvl)
-                    .execute(&mut pool)
-                    .await
-                    .map_err(Error::Database)?;
-
-                let img = utils::show_levelup_image(&new_message.author, lvl as u16).await?;
-
-                data
-                .config
-                .channels
-                .xp
+        
+            // determine if level-up occurred
+            let new_level = (new_xp / 100.0).floor() as i32;
+            if new_level > user_data.user_level {
+                // update level and save
+                sqlx::query(
+                    "INSERT INTO user_xp (user_id, user_level) VALUES ($1, $2)
+                    ON CONFLICT (user_id) DO UPDATE SET user_level = $2"
+                )
+                .bind(user_id)
+                .bind(new_level)
+                .execute(&mut pool)
+                .await
+                .map_err(Error::Database)?;
+        
+                // generate level-up message
+                let img = utils::show_levelup_image(&new_message.author, new_level as u16).await?;
+                data.config.channels.xp
                     .send_message(&ctx, |f| {
                         f.content(format!(
-                            "Congrats {}!. You have reached level {}",
+                            "congrats {}! you've levelled up to {}!",
                             new_message.author.mention(),
-                            lvl
+                            new_level
                         ))
                         .add_file(AttachmentType::Bytes {
                             data: std::borrow::Cow::Borrowed(&img),
@@ -149,8 +140,9 @@ pub async fn event_listener(
                     .await
                     .map_err(Error::Serenity)?;
             }
+        
         }
-
+        
         poise::Event::VoiceStateUpdate { old, new } => {
             let created_channels = sqlx::query_as::<sqlx::Postgres, structs::VoiceChannels>(
                 "SELECT * FROM voice_channels",
