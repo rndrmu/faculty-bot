@@ -28,21 +28,25 @@ pub mod prelude {
     #[derive(Debug)]
     #[non_exhaustive]
     pub enum Error {
-        /// Error from the Serenity library, usually Discord related
+        /// Error from the Serenity library, usually Discord related errors
         Serenity(serenity::Error),
-        /// Error returned from sqlite
+        /// Error returned from Postgres (Database)
         Database(sqlx::Error),
-        /// Generic error
+        /// Generic error 
+        /// 
+        /// This simply wraps a Boxed dyn Error and is used when you want to return an error that doesn't fit into any of the other categories
+        /// 
+        /// The User should not see this error, so please use WithMessage if you want to tell the user something
         Generic(GenericError),
-        /// Error returned from IO (Subprocess/File)
+        /// Error returned from IO (Subprocess/File) operations 
         IO(std::io::Error),
-        /// Error returned from a network request
+        /// Error returned from a network request 
         NetRequest(reqwest::Error),
-        /// Error with a custom message
+        /// Error with a custom message (used when a command goes wrong or you want to tell the user something)
         WithMessage(String),
-        /// Error from the sqlx migration
+        /// Error from the sqlx migration (not user facing)
         Migration(sqlx::migrate::MigrateError),
-        /// Error from the serde_json library
+        /// Error from the serde_json library (not user facing)
         Serde(serde_json::Error),
         /// Error when parsing goes wrong
         ParseIntError(std::num::ParseIntError),

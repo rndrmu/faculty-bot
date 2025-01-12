@@ -84,8 +84,8 @@ pub async fn event_listener(
         
             debug!("{}: {}", new_message.author.name, user_data.user_xp);
         
-            // scaling formula: xp = base_xp * (1 + scale_factor * level)
-            let scaling_factor = data.config.general.xp_scaling_factor; // e.g., 10% increase per level
+            // scaling formula: xp = base_xp / (1 + scale_factor * level) (logarithmic)
+            let scaling_factor = data.config.general.xp_scaling_factor;
             let base_xp = content_len as f64 / data.config.general.chars_for_level as f64;
             let xp_to_add = base_xp / (1.0 + scaling_factor * (user_data.user_level as f64).ln());
         
