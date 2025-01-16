@@ -15,8 +15,8 @@ pub fn verify() -> Template {
     Template::render("reverify", &{})
 }
 
-#[derive(Serialize, Deserialize)]
-struct Email {
+#[derive(Deserialize)]
+pub struct Email {
     email: String,
 }
 
@@ -33,14 +33,14 @@ pub fn send_mail(email: Json<Email>) -> Json<Response<String>> {
 
 #[derive(Serialize)]
 #[serde(crate = "rocket::serde")]
-struct Response<T> {
+pub struct Response<T> {
     data: T,
     status: u16,
     message: String,
 }
 
-#[derive(Serialize, Deserialize)]
-struct Code {
+#[derive(Deserialize)]
+pub  struct Code {
     code: String,
 }
 
