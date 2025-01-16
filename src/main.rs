@@ -4,6 +4,7 @@ mod eventhandler;
 mod structs;
 mod tasks;
 mod utils;
+mod web;
 
 use chrono::{DateTime, FixedOffset};
 use influxdb2::models::{DataPoint, Query};
@@ -15,15 +16,12 @@ use poise::{
     self,
     serenity_prelude::{self as serenity, GatewayIntents},
 };
-use serde::Deserialize;
+use rocket_dyn_templates::Template;
 use sqlx::postgres::PgPoolOptions;
 use structs::CodeEmailPair;
 use tokio::stream;
 use tracing_subscriber::prelude::*;
 use utils::CurrentEmail;
-
-use rocket_dyn_templates::Template;
-use rocket::serde::{Serialize, json::Json};
 
 
 pub mod prelude {
@@ -104,63 +102,6 @@ pub struct Data {
 
 #[macro_use] extern crate rocket;
 
-#[get("/")]
-fn index() -> &'static str {
-    "Hello, world!"
-}
-
-#[get("/verify")]
-fn verify() -> Template {
-    Template::render("reverify", &{})
-}
-
-#[derive(Serialize, Deserialize)]
-struct Email {
-    email: String,
-}
-
-#[post("/api/verify/sendMail", format = "application/json", data = "<email>")]
-fn send_mail(email: Json<Email>) -> Json<Response<String>> {
-    println!("Email: {}", email.email);
-    Json(Response {
-        data: "SUCCESS".to_string(),
-        status: 200,
-        message: "Email sent".to_string(),
-    })
-}
-
-
-#[derive(Serialize)]
-#[serde(crate = "rocket::serde")]
-struct Response<T> {
-    data: T,
-    status: u16,
-    message: String,
-}
-
-#[derive(Serialize, Deserialize)]
-struct Code {
-    code: String,
-}
-
-#[post("/api/verify/checkCode", format = "application/json", data = "<code>")]
-fn check_code(code: Json<Code>) -> Json<Response<String>> {
-    println!("Code: {}", code.code);
-    println!("Code == FAILTHIS: {}", code.code == "FAILTHIS");
-    if code.code == "FAILTHIS" {
-        Json(Response {
-            data: "FAILTHIS".to_string(),
-            status: 400,
-            message: "Invalid code".to_string(),
-        })
-    } else {
-        Json(Response {
-            data: "SUCCESS".to_string(),
-            status: 200,
-            message: "Code is valid".to_string(),
-        })
-    }
-}
 
 
 
@@ -168,10 +109,18 @@ fn check_code(code: Json<Code>) -> Json<Response<String>> {
 async fn main() {
 
    let rocket_result = rocket::build()
-    .mount("/", routes![index, verify, send_mail, check_code])
-    .attach(Template::fairing())
-    .launch().await;
-   tokio::join!(start_bot(), async { rocket_result.unwrap() });
+    .mount("/", routes![web::index, web::verify, web::send_mail, web::check_code])
+    .attach(Template::fairing());
+
+    let ctrl_z = tokio::signal::ctrl_c();
+
+   tokio::select! {
+         _ = start_bot() => {},
+         _ = rocket_result.launch() => {},
+         _ = ctrl_z => {
+              println!("Shutting down");
+         }
+   }
 }
 
 
@@ -195,11 +144,13 @@ async fn start_bot() -> Result<(), prelude::Error> {
     // de-noise tracing by readin the RUST_LOG env var
     let tracing_layer = tracing_subscriber::EnvFilter::try_from_default_env()
         .or_else(|_| tracing_subscriber::EnvFilter::try_new("info"))
-        .unwrap();
+        .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info"));
 
     tracing_subscriber::registry()
         .with(tracing_subscriber::fmt::layer().with_filter(tracing_layer))
-        .init();
+        .try_init().unwrap_or_else(|_| {
+            eprintln!("Failed to initialize tracing");
+        });
 
     tracing::info!("Starting up");
 
