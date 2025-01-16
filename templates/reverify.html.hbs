@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verifizierung benötigt!</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js"></script>
+
+</head>
+<body class="bg-[#2c2f33] text-gray-200 flex items-center justify-center min-h-screen">
+    <div class="max-w-md w-full p-6 bg-[#23272a] shadow-lg rounded-xl border border-[#2c2f33] text-center">
+        <div class="mb-4">
+            <div class="text-5xl mb-3">
+                <i class="fas fa-graduation-cap"></i>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-100">Verifizierung benötigt!</h1>
+        </div>
+
+        <!-- Step 1: Email Form -->
+        <form id="email-form" onsubmit="submitEmail(event)">
+            <p class="text-gray-400 mb-6">
+                Hallo <span class="font-semibold text-gray-300">{{name}}</span>, es ist Zeit für ein kurzes Update!  
+                Verifiziere dich, damit wir wissen, dass du noch am studieren bist. 📚  
+            </p>
+
+            <div class="mb-4">
+                <label for="email" class="block text-gray-300">Deine E-Mail-Adresse</label>
+                <input type="email" id="email" name="email" class="w-full px-4 py-3 text-gray-200 bg-[#36393f] border border-[#2c2f33] rounded-lg focus:ring-2 focus:ring-[#5865f2]" required>
+            </div>
+
+            <div class="bg-[#5865f2]/10 p-4 rounded-lg mb-6 border border-[#5865f2]/50">
+                <p class="text-sm text-gray-300">
+                    ✨ Es dauert nur einen Moment – du bekommst den Code per E-Mail!
+                </p>
+            </div>
+
+            <div id="loading-spinner" class="hidden mb-4">
+                <!-- Tailwind spinner -->
+                <div class="w-32 h-32 border-4 border-t-4 border-gray-200 border-t-[#5865f2] rounded-full animate-spin mx-auto"></div>
+            </div>
+
+            <button type="submit" class="inline-block px-5 py-3 text-sm font-medium text-white bg-[#5865f2] rounded-lg shadow-lg hover:bg-[#4752c4] transition">
+                E-Mail absenden
+            </button>
+        </form>
+
+        <!-- Step 2: Verification Code Form -->
+        <form id="code-form" class="hidden opacity-0" onsubmit="submitCode(event)">
+            <p class="text-gray-400 mb-6">
+                Wir haben dir einen Code geschickt!  
+                Bitte gib diesen Code hier ein, um deine Verifizierung abzuschließen.
+            </p>
+
+            <div class="mb-4">
+                <label for="verification-code" class="block text-gray-300">Verifizierungscode</label>
+                <input type="text" id="verification-code" name="verification-code" class="w-full px-4 py-3 text-gray-200 bg-[#36393f] border border-[#2c2f33] rounded-lg focus:ring-2 focus:ring-[#5865f2]" required>
+            </div>
+
+            <button type="submit" class="inline-block px-5 py-3 text-sm font-medium text-white bg-[#5865f2] rounded-lg shadow-lg hover:bg-[#4752c4] transition">
+                Code bestätigen
+            </button>
+        </form>
+
+        <p class="text-sm text-gray-500 mt-6">
+            Ohne Verifizierung bleibt dein Zugang deaktiviert. 
+            Deine Daten bleiben sicher – versprochen. 🤝  
+        </p>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="success-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-[#23272a] p-6 rounded-lg text-center w-96">
+            <div class="text-3xl mb-3 text-green-500 bg-green-500/20 p-2 rounded-full inline-block">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h2 class="text-xl font-bold text-gray-100 mb-4">Verifizierung erfolgreich!</h2>
+            <p class="text-gray-300 mb-6">Dein Account ist jetzt verifiziert. Viel Spaß beim Weiterstudieren! 🎉</p>
+            <button onclick="closeModal()" class="px-6 py-2 bg-[#5865f2] text-white rounded-lg shadow-lg hover:bg-[#4752c4] transition">
+                Schließen
+            </button>
+        </div>
+    </div>
+
+    <!-- Verification Failed Modal -->
+    <div id="failed-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-[#23272a] p-6 rounded-lg text-center w-96">
+            <div class="text-3xl mb-3 text-red-500 bg-red-500/20 p-2 rounded-full inline-block">
+                <i class="fas fa-times-circle"></i>
+            </div>
+            <h2 class="text-xl font-bold text-gray-100 mb-4">Verifizierung fehlgeschlagen!</h2>
+            <p class="text-gray-300 mb-6">Etwas ist schiefgelaufen. Überprüfe deine Eingaben und versuche es noch einmal.</p>
+            <button onclick="closeModal()" class="px-6 py-2 bg-red-500 text-white rounded-lg shadow-lg hover:bg-red-400 transition">
+                Schließen
+            </button>
+        </div>
+    </div>
+</body>
+</html>
+
+
+    <script>
+async function submitEmail(event) {
+    event.preventDefault();
+    const formData = new FormData(event.target);
+
+    try {
+        const res = await fetch("/api/verify/sendMail", {
+            method: "POST",
+            body: JSON.stringify({ email: formData.get("email") }),
+            headers: { "Content-Type": "application/json" },
+        });
+
+        if (!res.ok) throw new Error("failed to send email");
+
+        const emailForm = document.getElementById("email-form").classList.add("hidden");
+        const codeForm = document.getElementById("code-form");
+        codeForm.classList.remove("hidden");
+        codeForm.classList.add("opacity-100");
+    } catch (err) {
+        showVerificationFailed();
+    }
+}
+
+async function submitCode(event) {
+    event.preventDefault();
+    const formData = new FormData(event.target);
+
+    try {
+        const res = await fetch("/api/verify/checkCode", {
+            method: "POST",
+            body: JSON.stringify({ code: formData.get("verification-code") }),
+            headers: { "Content-Type": "application/json" },
+        });
+
+        const json = await res.json();
+        console.log(json);
+
+        if (json.status !== 200) throw new Error("failed to verify code");
+
+        document.getElementById("success-modal").classList.remove("hidden");
+    } catch (err) {
+        showVerificationFailed();
+    }
+}
+
+function showVerificationFailed() {
+    document.getElementById("failed-modal").classList.remove("hidden");
+}
+
+function closeModal() {
+    document.getElementById("success-modal").classList.add("hidden");
+    document.getElementById("failed-modal").classList.add("hidden");
+}
+
+document.getElementById("email").focus();
+
+
+    </script>
