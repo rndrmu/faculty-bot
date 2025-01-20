@@ -115,8 +115,11 @@ async fn main() {
 
    let rocket_result = rocket::build()
     .mount("/", 
-        routes![web::index, web::verify, web::reverify, web::send_mail, web::check_code, web::admin, web::login, web::logout, web::discord_auth, web::discord_callback]
+        routes![web::index, web::verify, web::reverify, web::admin, web::login, web::logout]
     )
+    .mount("/api", routes![
+        web::api::send_mail, web::api::check_code, web::api::discord_auth, web::api::discord_callback
+    ])
     .register("/", catchers![web::unauthorized, web::not_found])
     .attach(Template::fairing());
 

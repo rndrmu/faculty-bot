@@ -18,10 +18,10 @@ pub struct User {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Roles {
-    Admin,
-    Moderator,
-    User,
     Unprivileged,
+    User,
+    Moderator,
+    Admin,
 }
 
 
@@ -109,7 +109,8 @@ impl User {
                 // ensure required claims exist
                 if let Some(role_claim) = claims.get("role") {
                     println!("role claim: {}", role_claim);
-                    if role_claim == &(role as u64) {
+                    // has that role or higher (Admin > Moderator > User > Unprivileged)
+                    if role_claim >= &(role as u64) {
                         println!("user has required role");
                         return true;
                     } else {
@@ -130,6 +131,7 @@ impl User {
 
 
 pub struct AdminUser<'r>(&'r str);
+pub struct AuthenticatedUser<'r>(&'r str);
 
 #[derive(Debug)]
 pub enum ApiKeyError {
@@ -162,5 +164,30 @@ impl<'r> FromRequest<'r> for AdminUser<'r> {
 
 
         
+    }
+}
+
+#[rocket::async_trait]
+impl<'r> FromRequest<'r> for AuthenticatedUser<'r> {
+    type Error = ApiKeyError;
+
+    async fn from_request(req: &'r Request<'_>) -> Outcome<Self, Self::Error> {
+        /// Returns true if `key` is a valid API key string.
+        fn is_valid(key: &str) -> bool {
+            let is_valid = User::verify_token(key);
+
+            let has_role = User::user_has_role(key, Roles::User);
+
+            println!("Is valid: {}", is_valid);
+
+            is_valid && has_role
+        }
+
+        let key = req.cookies().get("token").map(|cookie| cookie.value());
+        match key {
+            None => Outcome::Error((Status::Unauthorized, ApiKeyError::Missing)),
+            Some(key) if is_valid(key) => Outcome::Success(AuthenticatedUser(key)),
+            Some(_) => Outcome::Error((Status::Unauthorized, ApiKeyError::Invalid)),
+        }
     }
 }
