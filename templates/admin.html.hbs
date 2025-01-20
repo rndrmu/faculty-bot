@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <title>Bot Admin Panel</title>
+    {{> partials/head }}
+
+</head>
+<body class="bg-[#2c2f33] text-gray-200 flex items-center justify-center min-h-screen">
+
+    <div class="text-center max-w-xl w-full p-6 bg-[#23272a] shadow-lg rounded-xl border border-[#2c2f33]">
+
+        <div class="text-6xl text-[#5865f2] mb-4">
+            <i class="fas fa-cogs"></i>
+        </div>
+
+        <h1 class="text-4xl font-bold text-gray-100 mb-4">Bot Admin Panel</h1>
+
+        <div class="mt-6" x-data="{ open: false }">
+            <button @click="open = !open" class="text-sm text-gray-400 hover:text-gray-200 transition">
+                <i class="fas fa-info-circle mr-2"></i> important information
+            </button>
+            <div x-show="open" class="mt-2 text-gray-400">
+                <p>
+                    you should watch
+                    <a href="https://www.crunchyroll.com/de/series/GXJHM3P19/bocchi-the-rock" target="_blank" class="text-[#5865f2] hover:text-[#4752c4] transition">bocchi the rock</a> :) 
+                </p>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

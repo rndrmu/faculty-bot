@@ -22,6 +22,7 @@ use structs::CodeEmailPair;
 use tokio::stream;
 use tracing_subscriber::prelude::*;
 use utils::CurrentEmail;
+use web::auth::User;
 
 
 pub mod prelude {
@@ -108,11 +109,21 @@ pub struct Data {
 #[tokio::main]
 async fn main() {
 
+    if let Ok (_) = dotenv() {
+        println!("Loaded .env file");
+    }
+
    let rocket_result = rocket::build()
-    .mount("/", routes![web::index, web::verify, web::send_mail, web::check_code])
+    .mount("/", 
+        routes![web::index, web::verify, web::reverify, web::send_mail, web::check_code, web::admin, web::login, web::logout, web::discord_auth, web::discord_callback]
+    )
+    .register("/", catchers![web::unauthorized, web::not_found])
     .attach(Template::fairing());
 
     let ctrl_z = tokio::signal::ctrl_c();
+
+    let example_user = User::new(1234567890).create_token(web::auth::Roles::Admin);
+    println!("Example admin token: {}", example_user);
 
    tokio::select! {
          _ = start_bot() => {},

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    {{> partials/head }}
+    <title>redirecting...</title>
+</head>
+<body class="bg-[#2c2f33] text-gray-200 flex flex-col items-center justify-center min-h-screen">
+
+    <div class="text-center max-w-xl w-full p-6 bg-[#23272a] shadow-lg rounded-xl border border-[#2c2f33]">
+        <div class="text-6xl text-[#5865f2] mb-4">
+            <i class="fas fa-spinner animate-spin"></i>
+        </div>
+        <h1 class="text-4xl font-bold text-gray-100 mb-4">please wait</h1>
+
+        <p class="mt-4 text-sm text-gray-400">
+            we’re redirecting you to the next page...
+        </p>
+
+        <!-- add {{ id }} and {{ username }} to show the user -->
+        <div class="mt-4 text-sm text-gray-400">
+            <p class="text-xs text-gray-500">
+                you are logged in as:
+            </p>
+            <img src="{{ avatar }}" alt="avatar" class="w-12 h-12 rounded-full mx-auto">
+            <p>
+                <i class="fas fa-user mr-2"></i> {{ user_id }} {{ username }}
+            </p>
+            <!-- show token -->
+            <p class="text-xs text-gray-500 mt-2">
+                your token is:
+            </p>
+            <p class="text-xs text-gray-400 bg-[#5865f2]/10 p-2 rounded-lg max-w-[200px] mx-auto whitespace-nowrap overflow-hidden overflow-ellipsis">
+                <i class="fas fa-key mr-2"></i> {{ token }}
+            </p>
+        </div>
+
+        <div class="mt-6">
+            <p class="text-xs text-gray-500">
+                if you’re not redirected automatically, click below:
+            </p>
+            <a href="/" class="block mt-4 px-4 py-2 bg-[#5865f2] text-white text-sm rounded shadow hover:bg-[#4752c4] transition">
+                <i class="fas fa-arrow-right"></i> continue
+            </a>
+        </div>
+    </div>
+
+</body>
+</html>
+
+<script>
+    // get next page from URL query
+    const urlParams = new URLSearchParams(window.location.search);
+    const nextPage = urlParams.get('next');
+
+{{!--     // redirect to next page
+    if (nextPage) {
+        setTimeout(() => {
+            window.location.href = nextPage;
+        }, 3000);
+    }
+
+    // if no next page is provided, redirect to home page
+    if (!nextPage) {
+        setTimeout(() => {
+            window.location.href = '/';
+        }, 3000);
+    } --}}
+
+</script>

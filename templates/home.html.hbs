@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <!-- include partials/head.hbs -->
+    {{> partials/head }}
+    <title>faculty bot</title>
+</head>
+<body class="bg-[#2c2f33] text-gray-200 flex flex-col items-center justify-center min-h-screen">
+
+    <div class="text-center max-w-xl w-full p-6 bg-[#23272a] shadow-lg rounded-xl border border-[#2c2f33]">
+        <div class="text-6xl text-[#5865f2] mb-4">
+            <i class="fas fa-cogs"></i>
+        </div>
+        <h1 class="text-4xl font-bold text-gray-100 mb-4">home page</h1>
+
+
+
+        <div class="mt-6" x-data="{ open: false }">
+            <button @click="open = !open" class="text-sm text-gray-400 hover:text-gray-200 transition">
+                <i class="fas fa-info-circle mr-2"></i> important information
+            </button>
+            <div x-show="open" class="mt-2 text-gray-400">
+                <p>
+                    you should watch bocchi the rock :)
+                </p>
+            </div>
+        </div>
+
+        <div class="mt-8 flex items-center justify-center gap-4">
+            <a href="https://github.com/rndrmu/faculty-bot" target="_blank" class="text-sm text-gray-400 hover:text-gray-200 transition flex items-center mt-2">
+                <i class="fab fa-github mr-2"></i> github repo
+            </a>
+            <a href="https://x.com/rndrmu" target="_blank" class="text-sm text-gray-400 hover:text-gray-200 transition flex items-center mt-2">
+                <i class="fa-brands fa-x-twitter mr-2"></i> X (formerly Twitter)
+            </a>
+            <a href="https://rndrmu.moe" target="_blank" class="text-sm text-gray-400 hover:text-gray-200 transition flex items-center mt-2">
+                <i class="fas fa-globe mr-2"></i> website
+            </a>
+            <!-- <i class="fa-brands fa-bluesky"></i> -->
+            <a href="https://rndrmu.bsky.social" target="_blank" class="text-sm text-gray-400 hover:text-gray-200 transition flex items-center mt-2">
+                <i class="fa-brands fa-bluesky mr-2"></i> bluesky
+            </a>
+        </div>
+    </div>
+
+</body>
+</html>
