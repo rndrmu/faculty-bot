@@ -11,8 +11,19 @@
         <div class="text-6xl text-[#5865f2] mb-4">
             <i class="fas fa-cogs"></i>
         </div>
-        <h1 class="text-4xl font-bold text-gray-100 mb-4">home page</h1>
-
+        <h1 class="text-4xl font-bold text-gray-100 mb-4">
+            faculty bot dashboard
+        </h1>
+        <!-- version tag with beta badge -->
+        <div class="flex items-center justify-center gap-2">
+            <span class="text-xs text-gray-400">
+                v0.1.0
+            </span>
+            <span class="text-xs bg-[#5865f2] text-white px-2 py-1 rounded-full">
+                beta
+            </span>
+            
+        </div>
 
 
         <div class="mt-6" x-data="{ open: false }">
@@ -26,7 +37,39 @@
             </div>
         </div>
 
-        <div class="mt-8 flex items-center justify-center gap-4">
+        <p class="text-sm text-gray-400 mb-2 uppercase font-semibold tracking-wider text-center mt-4 border-b border-gray-700 w-full">
+            Important Links
+        </p>
+
+        <!-- centre aligned 3 col grid -->
+        <div class="mt-4 grid grid-cols-3 gap-4 justify-items-center w-full mx-auto">
+            <a href="/api/auth/discord" class="text-sm text-gray-400 hover:text-gray-200 transition flex items-center mt-2">
+                <i class="fab fa-discord mr-2"></i> login
+            </a>
+            <a href="/api/auth/logout" class="text-sm text-gray-400 hover:text-gray-200 transition flex items-center mt-2">
+                <i class="fas fa-sign-out-alt mr-2"></i> logout
+            </a>
+            <a href="/api/auth/discord/callback" class="text-sm text-gray-400 hover:text-gray-200 transition flex items-center mt-2">
+                <i class="fas fa-user-circle mr-2"></i> profile
+            </a>
+            <a href="/verify" class="text-sm text-gray-400 hover:text-gray-200 transition flex items-center mt-2">
+                <i class="fas fa-user-check mr-2"></i> verify
+            </a>
+            
+            <a href="reverify" class="text-sm text-gray-400 hover:text-gray-200 transition flex items-center mt-2">
+                <i class="fas fa-user-check mr-2"></i> reverify
+            </a>
+
+            <a href="switch-account" class="text-sm text-gray-400 hover:text-gray-200 transition flex items-center mt-2">
+                <i class="fas fa-user-check mr-2"></i> switch account
+            </a>
+        </div>
+
+        <p class="text-sm text-gray-400 mb-2 uppercase font-semibold tracking-wider text-center mt-4 border-b border-gray-700 w-full">
+            Social Media
+        </p>
+
+        <div class="mt-4 flex items-center justify-center gap-4">
             <a href="https://github.com/rndrmu/faculty-bot" target="_blank" class="text-sm text-gray-400 hover:text-gray-200 transition flex items-center mt-2">
                 <i class="fab fa-github mr-2"></i> github repo
             </a>
