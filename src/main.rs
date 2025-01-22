@@ -115,7 +115,7 @@ async fn main() {
 
    let rocket_result = rocket::build()
     .mount("/", 
-        routes![web::index, web::verify, web::reverify, web::admin, web::login, web::logout]
+        routes![web::index, web::verify, web::reverify, web::admin, web::login, web::logout, web::switch_account]
     )
     .mount("/api", routes![
         web::api::send_mail, web::api::check_code, web::api::discord_auth, web::api::discord_callback

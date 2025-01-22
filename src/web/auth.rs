@@ -35,12 +35,10 @@ impl User {
 
     pub fn create_token(&self, role: Roles) -> String {
         let secret_key = std::env::var("SECRET_KEY").expect("SECRET_KEY must be set");
-        let iv = std::env::var("IV").expect("IV must be set");
-
         let key: Hmac<Sha256> = Hmac::new_from_slice(secret_key.as_bytes()).expect("HMAC can take key of any size");
         let mut claims = BTreeMap::new();
         claims.insert("id", self.id);
-        claims.insert("exp", chrono::Utc::now().timestamp() as u64 + 1000); // expire in 1000 seconds (about 16 minutes)
+        claims.insert("exp", chrono::Utc::now().timestamp() as u64 + 86400); // 86400s = 24h
         claims.insert("iat", chrono::Utc::now().timestamp() as u64);
         claims.insert("role", role as u64);
 
@@ -54,76 +52,54 @@ impl User {
 
     pub fn verify_token(token: &str) -> bool {
         let secret_key = std::env::var("SECRET_KEY").expect("SECRET_KEY must be set");
-    
         let key: Hmac<Sha256> = Hmac::new_from_slice(secret_key.as_bytes())
             .expect("HMAC can take key of any size");
-    
-        // verify token signature and deserialize claims
-        let claims: Result<BTreeMap<String, u64>, _> = token.verify_with_key(&key);
-    
-        match claims {
-            Ok(claims) => {
-                if let Some(exp) = claims.get("exp") {
-                    // validate expiration
-                    let current_time = chrono::Utc::now().timestamp() as u64;
-                    if current_time > *exp {
-                        println!("token is expired");
-                        return false;
-                    }
-                }
-    
-                // ensure required claims exist
-                if claims.contains_key("id") {
-                    println!("token is valid");
-                    return true;
+
+        token.verify_with_key(&key)
+            .ok()
+            .and_then(|claims: BTreeMap<String, u64>| {
+                let exp = claims.get("exp")?;
+                let current_time = chrono::Utc::now().timestamp() as u64;
+                
+                if current_time > *exp || !claims.contains_key("id") {
+                    None
                 } else {
-                    println!("token is missing required 'id' claim");
+                    Some(true)
                 }
-            }
-            Err(err) => println!("token verification failed: {:?}", err),
-        }
-    
-        false
+            })
+            .unwrap_or_else(|| {
+                println!("Token verification failed");
+                false
+            })
     }
 
     pub fn user_has_role(token: &str, role: Roles) -> bool {
         let secret_key = std::env::var("SECRET_KEY").expect("SECRET_KEY must be set");
-    
         let key: Hmac<Sha256> = Hmac::new_from_slice(secret_key.as_bytes())
             .expect("HMAC can take key of any size");
-    
-        // verify token signature and deserialize claims
-        let claims: Result<BTreeMap<String, u64>, _> = token.verify_with_key(&key);
-    
-        match claims {
-            Ok(claims) => {
-                if let Some(exp) = claims.get("exp") {
-                    // validate expiration
-                    let current_time = chrono::Utc::now().timestamp() as u64;
-                    if current_time > *exp {
-                        println!("token is expired");
-                        return false;
-                    }
-                }
-    
-                // ensure required claims exist
-                if let Some(role_claim) = claims.get("role") {
-                    println!("role claim: {}", role_claim);
-                    // has that role or higher (Admin > Moderator > User > Unprivileged)
-                    if role_claim >= &(role as u64) {
-                        println!("user has required role");
-                        return true;
-                    } else {
-                        println!("user does not have required role");
-                    }
+
+        token.verify_with_key(&key)
+            .ok()
+            .and_then(|claims: BTreeMap<String, u64>| {
+                let exp = claims.get("exp")?;
+                let role_claim = claims.get("role")?;
+                let current_time = chrono::Utc::now().timestamp() as u64;
+
+                if current_time > *exp {
+                    println!("token is expired");
+                    None
+                } else if role_claim >= &(role as u64) {
+                    println!("user has required role");
+                    Some(true)
                 } else {
-                    println!("token is missing required 'role' claim");
+                    println!("user does not have required role");
+                    None
                 }
-            }
-            Err(err) => println!("token verification failed: {:?}", err),
-        }
-    
-        false
+            })
+            .unwrap_or_else(|| {
+                println!("token verification failed or missing claims");
+                false
+            })
     }
     
 
@@ -161,8 +137,6 @@ impl<'r> FromRequest<'r> for AdminUser<'r> {
             Some(key) if is_valid(key) => Outcome::Success(AdminUser(key)),
             Some(_) => Outcome::Error((Status::Unauthorized, ApiKeyError::Invalid)),
         }
-
-
         
     }
 }

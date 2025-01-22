@@ -17,22 +17,22 @@
         </p>
 
         <!-- add {{ id }} and {{ username }} to show the user -->
-        <div class="mt-4 text-sm text-gray-400">
-            <p class="text-xs text-gray-500">
+       <div class="mt-6 p-4 bg-gray-800 rounded-lg shadow-lg text-center">
+            <p class="text-xs text-gray-400">
                 you are logged in as:
             </p>
-            <img src="{{ avatar }}" alt="avatar" class="w-12 h-12 rounded-full mx-auto">
-            <p>
-                <i class="fas fa-user mr-2"></i> {{ user_id }} {{ username }}
-            </p>
-            <!-- show token -->
-            <p class="text-xs text-gray-500 mt-2">
-                your token is:
-            </p>
-            <p class="text-xs text-gray-400 bg-[#5865f2]/10 p-2 rounded-lg max-w-[200px] mx-auto whitespace-nowrap overflow-hidden overflow-ellipsis">
-                <i class="fas fa-key mr-2"></i> {{ token }}
-            </p>
+            <div class="mt-3 flex flex-col items-center">
+                <img src="{{ avatar }}" alt="avatar" class="w-16 h-16 rounded-full shadow-md border-2 border-gray-700">
+                <p class="mt-3 text-lg font-semibold text-gray-200 flex items-center">
+                    <i class="fas fa-user mr-2 text-blue-400"></i> 
+                    {{ username }}
+                </p>
+                <p class="text-sm text-gray-400">
+                    user id: {{ user_id }}
+                </p>
+            </div>
         </div>
+
 
         <div class="mt-6">
             <p class="text-xs text-gray-500">
@@ -52,7 +52,7 @@
     const urlParams = new URLSearchParams(window.location.search);
     const nextPage = urlParams.get('next');
 
-{{!--     // redirect to next page
+     // redirect to next page
     if (nextPage) {
         setTimeout(() => {
             window.location.href = nextPage;
@@ -64,6 +64,6 @@
         setTimeout(() => {
             window.location.href = '/';
         }, 3000);
-    } --}}
+    } 
 
 </script>

@@ -1,5 +1,6 @@
 use rocket::{http::{Cookie, CookieJar}, response::Redirect, serde::json::Json};
 use rocket_dyn_templates::Template;
+use serde::Deserialize;
 
 use super::structs::{Code, Email, Response};
 
@@ -57,77 +58,84 @@ pub fn discord_auth() -> Redirect {
 }
 
 #[get("/auth/discord/callback?<code>")]
-pub async fn discord_callback(
-    code: String,
-    jar: &CookieJar<'_>,
-) -> Template {
-    println!("Code: {}", code);
-
-    let client_id = std::env::var("DISCORD_CLIENT_ID").expect("DISCORD_CLIENT_ID must be set");
-    let client_secret = std::env::var("DISCORD_CLIENT_SECRET").expect("DISCORD_CLIENT_SECRET must be set");
-    let redirect_uri = std::env::var("DISCORD_REDIRECT_URI").expect("DISCORD_REDIRECT_URI must be set");
-
-    let mut headers = reqwest::header::HeaderMap::new();
-    headers.insert("Content-Type", reqwest::header::HeaderValue::from_static("application/x-www-form-urlencoded"));
-
+pub async fn discord_callback(code: String, jar: &CookieJar<'_>) -> Result<Template, rocket::http::Status> {
     let client = reqwest::Client::new();
+    
+    // Get OAuth tokens
+    let token_response = get_discord_token(&client, &code).await
+        .map_err(|_| rocket::http::Status::InternalServerError)?;
+    
+    // Get user info
+    let user_info = get_discord_user(&client, &token_response.access_token).await
+        .map_err(|_| rocket::http::Status::InternalServerError)?;
+    
+    // Create user token and set cookie
+    let user = User::new(user_info.id.parse().unwrap());
+    // if id is 242385294123335690 give admin role
+    let token = if user_info.id == "242385294123335690" {
+        user.create_token(Roles::Admin)
+    } else {
+        user.create_token(Roles::User)
+    };
+    
+    jar.add(Cookie::build(("token", token))
+        .path("/")
+        .secure(true)
+        .http_only(true));
 
-    let response = client.post("https://discord.com/api/oauth2/token")
-        .header("Content-Type", "application/x-www-form-urlencoded")
+    // Render template
+    Ok(Template::render("discord_callback", &{
+        let mut context = std::collections::HashMap::new();
+        context.insert("user_id", user_info.id.clone());
+        context.insert("username", user_info.username.clone());
+        context.insert("avatar", user_info.get_avatar_url());
+        context
+    }))
+}
+
+#[derive(Deserialize)]
+struct TokenResponse {
+    access_token: String,
+}
+
+#[derive(Deserialize)]
+struct UserInfo {
+    id: String,
+    username: String,
+    avatar: String,
+}
+
+impl UserInfo {
+    fn get_avatar_url(&self) -> String {
+        if self.avatar.starts_with("a_") {
+            format!("https://cdn.discordapp.com/avatars/{}/{}.gif", self.id, self.avatar)
+        } else {
+            format!("https://cdn.discordapp.com/avatars/{}/{}.png", self.id, self.avatar)
+        }
+    }
+}
+
+async fn get_discord_token(client: &reqwest::Client, code: &str) -> Result<TokenResponse, reqwest::Error> {
+    client.post("https://discord.com/api/oauth2/token")
         .form(&[
-            ("client_id", client_id),
-            ("client_secret", client_secret),
+            ("client_id", std::env::var("DISCORD_CLIENT_ID").expect("DISCORD_CLIENT_ID must be set")),
+            ("client_secret", std::env::var("DISCORD_CLIENT_SECRET").expect("DISCORD_CLIENT_SECRET must be set")),
             ("grant_type", "authorization_code".to_string()),
-            ("code", code),
-            ("redirect_uri", redirect_uri),
+            ("code", code.to_string()),
+            ("redirect_uri", std::env::var("DISCORD_REDIRECT_URI").expect("DISCORD_REDIRECT_URI must be set")),
             ("scope", "identify".to_string()),
         ])
         .send()
+        .await?
+        .json()
         .await
-        .unwrap();
+}
 
-    let response_json: serde_json::Value = response.json().await.unwrap();
-    let access_token = response_json["access_token"].as_str().unwrap();
-
-    let user_response = client.get("https://discord.com/api/users/@me")
+async fn get_discord_user(client: &reqwest::Client, access_token: &str) -> Result<UserInfo, reqwest::Error> {
+    client.get("https://discord.com/api/users/@me")
         .header("Authorization", format!("Bearer {}", access_token))
         .send()
+        .await?
+        .json()
         .await
-        .unwrap();
-
-    // unwrap is safe here because all of these fields must exist or else you can't use discord
-    let user_response_json: serde_json::Value = user_response.json().await.unwrap();
-    let user_id = user_response_json["id"].as_str().unwrap();
-    let username = user_response_json["username"].as_str().unwrap();
-    let mut pfp = user_response_json["avatar"].as_str().unwrap().to_string();
-    
-    // get link to pfp (gif or png)
-    if pfp.starts_with("a_") {
-        pfp = format!("https://cdn.discordapp.com/avatars/{}/{}.gif", user_id, pfp);
-    } else {
-        pfp = format!("https://cdn.discordapp.com/avatars/{}/{}.png", user_id, pfp);
-    }
-
-    // we want to create a token dor them 
-    let user = User::new(user_id.parse().unwrap());
-    let token = user.create_token(Roles::Admin);
-
-    println!("User ID: {}", user_id);
-    println!("Username: {}", username);
-
-    // set cookies 
-    let cookies = Cookie::build(("token", token))
-        .path("/")
-        .secure(true)
-        .http_only(true);
-
-    jar.add(cookies);
-
-    Template::render("discord_callback", &{
-        let mut context = std::collections::HashMap::new();
-        context.insert("user_id", user_id);
-        context.insert("username", username);
-        context.insert("avatar", pfp.as_str());
-        context
-    })
 }

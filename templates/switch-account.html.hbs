@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <title>Konto-Migration benötigt!</title>
+    {{> partials/head }}
+</head>
+<body class="bg-[#2c2f33] text-gray-200 flex items-center justify-center min-h-screen">
+    <div class="max-w-md w-full p-6 bg-[#23272a] shadow-lg rounded-xl border border-[#2c2f33] text-center">
+        <div class="mb-4">
+            <div class="text-5xl mb-3">
+                <i class="fas fa-graduation-cap"></i>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-100">Konto-Migration benötigt!</h1>
+        </div>
+
+        <!-- Step 1: Email Form -->
+        <form id="email-form" onsubmit="submitEmail(event)">
+            <p class="text-gray-400 mb-6">
+                hallo <span class="font-semibold text-gray-300">{{name}}</span>, um dein konto zu migrieren, gib bitte deine e-mail-adresse ein.  
+            </p>
+
+            <div class="mb-4">
+                <label for="email" class="block text-gray-300">Deine E-Mail-Adresse</label>
+                <input type="email" id="email" name="email" class="w-full px-4 py-3 text-gray-200 bg-[#36393f] border border-[#2c2f33] rounded-lg focus:ring-2 focus:ring-[#5865f2]" required>
+            </div>
+
+            <div class="bg-[#5865f2]/10 p-4 rounded-lg mb-6 border border-[#5865f2]/50">
+                <p class="text-sm text-gray-300">
+                    ✨ es dauert nur einen moment – du bekommst den code per e-mail!
+                </p>
+            </div>
+
+            <button type="submit" class="inline-block px-5 py-3 text-sm font-medium text-white bg-[#5865f2] rounded-lg shadow-lg hover:bg-[#4752c4] transition">
+                E-Mail absenden
+            </button>
+        </form>
+
+        <!-- Step 2: Verification Code Form -->
+        <form id="code-form" class="hidden opacity-0" onsubmit="submitCode(event)">
+            <p class="text-gray-400 mb-6">
+                wir haben dir einen code geschickt!  
+                bitte gib diesen code hier ein, um deine konto-migration abzuschließen.  
+            </p>
+
+            <div class="mb-4">
+                <label for="verification-code" class="block text-gray-300">Verifizierungscode</label>
+                <input type="text" id="verification-code" name="verification-code" class="w-full px-4 py-3 text-gray-200 bg-[#36393f] border border-[#2c2f33] rounded-lg focus:ring-2 focus:ring-[#5865f2]" required>
+            </div>
+
+            <button type="submit" class="inline-block px-5 py-3 text-sm font-medium text-white bg-[#5865f2] rounded-lg shadow-lg hover:bg-[#4752c4] transition">
+                Code bestätigen
+            </button>
+        </form>
+
+        <!-- Step 3: Login with New Discord Account -->
+        <div id="discord-login" class="hidden opacity-0">
+            <p class="text-gray-400 mb-6">
+                dein konto wurde verifiziert!  
+                melde dich jetzt mit deinem neuen discord-account an, um den migrationsprozess abzuschließen.  
+            </p>
+
+            <button onclick="loginWithDiscord()" class="inline-flex items-center px-5 py-3 text-sm font-medium text-white bg-[#5865f2] rounded-lg shadow-lg hover:bg-[#4752c4] transition">
+                <i class="fab fa-discord text-lg mr-2"></i>
+                Mit Discord anmelden
+            </button>
+        </div>
+
+        <p class="text-sm text-gray-500 mt-6">
+            ohne migration bleibt dein zugang deaktiviert. deine daten bleiben sicher – versprochen. 🤝  
+        </p>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="success-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-[#23272a] p-6 rounded-lg text-center w-96">
+            <div class="text-3xl mb-3 text-green-500 bg-green-500/20 p-2 rounded-full inline-block">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h2 class="text-xl font-bold text-gray-100 mb-4">Migration erfolgreich!</h2>
+            <p class="text-gray-300 mb-6">
+                dein konto wurde erfolgreich migriert.  
+                melde dich jetzt mit deinem neuen discord-account an, um fortzufahren. 🎉  
+            </p>
+            <button onclick="closeModal()" class="px-6 py-2 bg-[#5865f2] text-white rounded-lg shadow-lg hover:bg-[#4752c4] transition">
+                Schließen
+            </button>
+        </div>
+    </div>
+
+    <!-- Verification Failed Modal -->
+    <div id="failed-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-[#23272a] p-6 rounded-lg text-center w-96">
+            <div class="text-3xl mb-3 text-red-500 bg-red-500/20 p-2 rounded-full inline-block">
+                <i class="fas fa-times-circle"></i>
+            </div>
+            <h2 class="text-xl font-bold text-gray-100 mb-4">Migration fehlgeschlagen!</h2>
+            <p class="text-gray-300 mb-6">
+                etwas ist schiefgelaufen. überprüfe deine eingaben und versuche es noch einmal.  
+                achte darauf, dass du deine e-mail-adresse und deinen neuen discord-account richtig angibst.  
+            </p>
+            <button onclick="closeModal()" class="px-6 py-2 bg-red-500 text-white rounded-lg shadow-lg hover:bg-red-400 transition">
+                Schließen
+            </button>
+        </div>
+    </div>
+</body>
+</html>
+
+
+ <script>
+async function submitEmail(event) {
+    event.preventDefault();
+    const formData = new FormData(event.target);
+    let errorMessage;
+
+    try {
+        const res = await fetch("/api/verify/sendMail", {
+            method: "POST",
+            body: JSON.stringify({ email: formData.get("email") }),
+            headers: { "Content-Type": "application/json" },
+        });
+
+        const json = await res.json();
+        console.log(json);
+        errorMessage = json.message;
+
+        if (json.status !== 200) throw new Error("failed to send email");
+
+        document.getElementById("email-form").classList.add("hidden");
+        const codeForm = document.getElementById("code-form");
+        codeForm.classList.remove("hidden");
+        codeForm.classList.add("opacity-100");
+    } catch (err) {
+        showVerificationFailed(errorMessage);
+    }
+}
+
+async function submitCode(event) {
+    event.preventDefault();
+    const formData = new FormData(event.target);
+    let errorMessage;
+
+    try {
+        const res = await fetch("/api/verify/checkCode", {
+            method: "POST",
+            body: JSON.stringify({ code: formData.get("verification-code") }),
+            headers: { "Content-Type": "application/json" },
+        });
+
+        const json = await res.json();
+        console.log(json);
+        errorMessage = json.message;
+
+        if (json.status !== 200) throw new Error("failed to verify code");
+
+        document.getElementById("code-form").classList.add("hidden");
+        const discordLogin = document.getElementById("discord-login");
+        discordLogin.classList.remove("hidden");
+        discordLogin.classList.add("opacity-100");
+    } catch (err) {
+        showVerificationFailed(errorMessage);
+    }
+}
+
+function loginWithDiscord() {
+    //window.location.href = "/api/auth/discord"; // adjust the url to your discord auth endpoint
+    // open a popup window to the discord auth endpoint
+    window.open("/api/auth/discord", "discord-auth", "width=800,height=600");
+}
+
+function showVerificationFailed(message) {
+    const modal = document.getElementById("failed-modal");
+    modal.classList.remove("hidden");
+    modal.querySelector("p").textContent = message;
+}
+
+function closeModal() {
+    document.getElementById("success-modal").classList.add("hidden");
+    document.getElementById("failed-modal").classList.add("hidden");
+}
+
+document.getElementById("email").focus();
+</script>

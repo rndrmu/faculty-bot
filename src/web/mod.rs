@@ -1,16 +1,10 @@
 pub mod api;
 pub mod auth;
 pub mod structs;
-
-
-use core::prelude;
-use std::time;
-
 use auth::{AdminUser, AuthenticatedUser, Roles, User};
-use rocket::response::Redirect;
 use rocket_dyn_templates::Template;
-use rocket::serde::{Serialize, json::Json};
-use serde::Deserialize;
+
+
 
 
 
@@ -20,13 +14,18 @@ pub fn index() -> Template {
 }
 
 #[get("/reverify")]
-pub fn reverify() -> Template {
+pub fn reverify(_user: AuthenticatedUser<'_>) -> Template {
     Template::render("reverify", &{})
 }
 
 #[get("/verify")]
-pub fn verify(user: AuthenticatedUser<'_>) -> Template {
+pub fn verify(_user: AuthenticatedUser<'_>) -> Template {
     Template::render("verify", &{})
+}
+
+#[get("/switch-account")]
+pub fn switch_account(_user: AuthenticatedUser<'_>) -> Template {
+    Template::render("switch-account", &{})
 }
 
 #[get("/login")]
