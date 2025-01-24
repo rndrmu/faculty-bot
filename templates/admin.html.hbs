@@ -1,53 +1,53 @@
 <!DOCTYPE html>
 <html lang="en">
     {{> partials/head }}
-    <body class="bg-[#2c2f33] text-gray-200 min-h-screen flex" x-data="{ selectedTab: 'prefix', success: false, failure: false }">
+    <body class="bg-[#2c2f33] text-gray-200 min-h-screen flex" x-data="{ selectedTab: 'prefix', success: false, failure: false, toastMessage: '', toastType: '' }">
 
         <!-- sidebar -->
-        <div class="w-64 bg-[#23272a] p-4 flex flex-col space-y-4 border-r border-[#2c2f33]">
-            <h1 class="text-xl font-bold text-gray-100 mb-4">Admin Dashboard</h1>
+        <div class="w-64 bg-[#23272a] p-6 flex flex-col space-y-6 border-r border-[#2c2f33]">
+            <h1 class="text-2xl font-bold text-[#ffcc00] mb-6">Admin Dashboard <span class="text-[#ff0077]">💥</span></h1>
             <nav>
-                <ul class="space-y-2">
+                <ul class="space-y-4">
                     <li>
                         <button 
-                            class="w-full py-2 px-4 text-left bg-[#40444b] hover:bg-[#2c2f33] rounded-lg"
+                            class="w-full py-3 px-5 text-left bg-[#40444b] hover:bg-[#2c2f33] rounded-lg flex items-center gap-3 transform hover:scale-105 transition-all"
                             @click="selectedTab = 'prefix'">
-                            <i class="fas fa-edit mr-2"></i> Change Prefix
+                            <i class="fas fa-edit text-[#ff0077]"></i> Change Prefix
                         </button>
                     </li>
                     <li>
                         <button 
-                            class="w-full py-2 px-4 text-left bg-[#40444b] hover:bg-[#2c2f33] rounded-lg"
+                            class="w-full py-3 px-5 text-left bg-[#40444b] hover:bg-[#2c2f33] rounded-lg flex items-center gap-3 transform hover:scale-105 transition-all"
                             @click="selectedTab = 'register'">
-                            <i class="fas fa-terminal mr-2"></i> Register Commands
+                            <i class="fas fa-terminal text-[#ff0077]"></i> Register Commands
                         </button>
                     </li>
                     <li>
                         <button 
-                            class="w-full py-2 px-4 text-left bg-[#40444b] hover:bg-[#2c2f33] rounded-lg"
+                            class="w-full py-3 px-5 text-left bg-[#40444b] hover:bg-[#2c2f33] rounded-lg flex items-center gap-3 transform hover:scale-105 transition-all"
                             @click="selectedTab = 'mensaplan'">
-                            <i class="fas fa-clipboard-list mr-2"></i> Post Mensaplan
+                            <i class="fas fa-clipboard-list text-[#ff0077]"></i> Post Mensaplan
                         </button>
                     </li>
                     <li>
                         <button 
-                            class="w-full py-2 px-4 text-left bg-[#40444b] hover:bg-[#2c2f33] rounded-lg"
+                            class="w-full py-3 px-5 text-left bg-[#40444b] hover:bg-[#2c2f33] rounded-lg flex items-center gap-3 transform hover:scale-105 transition-all"
                             @click="selectedTab = 'url'">
-                            <i class="fas fa-link mr-2"></i> Change Mensaplan URL
+                            <i class="fas fa-link text-[#ff0077]"></i> Change Mensaplan URL
                         </button>
                     </li>
                     <li>
                         <button 
-                            class="w-full py-2 px-4 text-left bg-[#40444b] hover:bg-[#2c2f33] rounded-lg"
+                            class="w-full py-3 px-5 text-left bg-[#40444b] hover:bg-[#2c2f33] rounded-lg flex items-center gap-3 transform hover:scale-105 transition-all"
                             @click="selectedTab = 'verified'">
-                            <i class="fas fa-user-check mr-2"></i> Verified Users
+                            <i class="fas fa-user-check text-[#ff0077]"></i> Verified Users
                         </button>
                     </li>
                     <li>
                         <button 
-                            class="w-full py-2 px-4 text-left bg-[#40444b] hover:bg-[#2c2f33] rounded-lg"
+                            class="w-full py-3 px-5 text-left bg-[#40444b] hover:bg-[#2c2f33] rounded-lg flex items-center gap-3 transform hover:scale-105 transition-all"
                             @click="selectedTab = 'users'">
-                            <i class="fas fa-user-clock mr-2"></i> User Sign-Up Details
+                            <i class="fas fa-user-clock text-[#ff0077]"></i> User Sign-Up Details
                         </button>
                     </li>
                 </ul>
@@ -55,105 +55,126 @@
         </div>
 
         <!-- main content -->
-        <div class="flex-1 p-6">
-           <template x-if="success">
-                <div class="p-4 mb-4 text-sm text-green-700 bg-green-100 rounded-lg relative" role="alert">
-                    Action completed successfully.
-                    <button @click="success = false" class="absolute top-2 right-2 text-green-900 font-bold">&times;</button>
-                </div>
-            </template>
-            <template x-if="failure">
-                <div class="p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg relative" role="alert">
-                    Action failed. Please try again.
-                    <button @click="failure = false" class="absolute top-2 right-2 text-red-900 font-bold">&times;</button>
+        <div class="flex-1 p-8 space-y-8">
+            <!-- Toasts -->
+            <template x-if="toastMessage">
+                <div :class="toastType === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'" class="fixed bottom-6 right-6 max-w-xs w-full p-4 rounded-lg shadow-lg transform transition-all duration-300">
+                    <div class="flex justify-between items-center">
+                        <p class="text-sm" x-text="toastMessage"></p>
+                        <button @click="toastMessage = ''" class="text-xl font-bold">✖</button>
+                    </div>
                 </div>
             </template>
 
-            <div x-show="selectedTab === 'prefix'" class="space-y-4">
-                <h2 class="text-2xl font-bold">Change Prefix</h2>
-                <p>Set a new bot command prefix:</p>
-                <input type="text" class="w-full p-2 bg-[#40444b] text-gray-200 rounded-lg focus:outline-none" placeholder="Enter new prefix">
-                <div class="flex space-x-4">
-                    <button @click="success = true; failure = false" class="py-2 px-4 bg-[#43b581] hover:bg-[#36a36b] text-white rounded-lg font-semibold">
+            <div x-show="selectedTab === 'prefix'" class="space-y-6">
+                <h2 class="text-3xl font-bold text-[#ff0077]">Change Prefix</h2>
+                <p class="text-lg">Set a new bot command prefix:</p>
+                <input type="text" class="w-full p-3 bg-[#40444b] text-gray-200 rounded-lg focus:outline-none" placeholder="Enter new prefix">
+                <div class="flex space-x-6">
+                    <button @click="toastMessage = 'Action completed successfully! 🎉'; toastType = 'success'" class="py-3 px-6 bg-[#43b581] hover:bg-[#36a36b] text-white rounded-lg font-semibold transition-all transform hover:scale-110">
                         Save Prefix
                     </button>
-                    <button @click="failure = true; success = false" class="py-2 px-4 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold">
+                    <button @click="toastMessage = 'Action failed. Please try again. 😔'; toastType = 'failure'" class="py-3 px-6 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold transition-all transform hover:scale-110">
                         Cancel
                     </button>
                 </div>
             </div>
 
-            <div x-show="selectedTab === 'register'" class="space-y-4">
-                <h2 class="text-2xl font-bold">Register Commands</h2>
-                <table class="table-auto w-full text-left bg-[#23272a] border border-[#2c2f33] rounded-lg">
+            <div x-show="selectedTab === 'register'" class="space-y-6">
+                <h2 class="text-3xl font-bold text-[#ff0077]">Register Commands</h2>
+                <table class="table-auto w-full text-left bg-[#23272a] border border-[#2c2f33] rounded-lg shadow-lg">
                     <thead class="bg-[#40444b] text-white">
                         <tr>
-                            <th class="py-2 px-4">Command</th>
-                            <th class="py-2 px-4">Description</th>
-                            <th class="py-2 px-4">Status</th>
+                            <th class="py-3 px-5">Command</th>
+                            <th class="py-3 px-5">Description</th>
+                            <th class="py-3 px-5">Status</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td class="py-2 px-4">/help</td>
-                            <td class="py-2 px-4">Displays help information</td>
-                            <td class="py-2 px-4">Registered</td>
+                            <td class="py-3 px-5">/help</td>
+                            <td class="py-3 px-5">Displays help information</td>
+                            <td class="py-3 px-5 text-green-500">Registered</td>
                         </tr>
                         <tr>
-                            <td class="py-2 px-4">/ban</td>
-                            <td class="py-2 px-4">Bans a user</td>
-                            <td class="py-2 px-4">Pending</td>
+                            <td class="py-3 px-5">/ban</td>
+                            <td class="py-3 px-5">Bans a user</td>
+                            <td class="py-3 px-5 text-yellow-500">Pending</td>
                         </tr>
                         <tr>
-                            <td class="py-2 px-4">/kick</td>
-                            <td class="py-2 px-4">Kicks a user</td>
-                            <td class="py-2 px-4">Failed</td>
+                            <td class="py-3 px-5">/kick</td>
+                            <td class="py-3 px-5">Kicks a user</td>
+                            <td class="py-3 px-5 text-red-500">Failed</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
 
-            <div x-show="selectedTab === 'mensaplan'" class="space-y-4">
-                <h2 class="text-2xl font-bold">Post Mensaplan</h2>
-                <p>Force-post the current Mensaplan to all guilds.</p>
-                <button @click="success = true; failure = false" class="py-2 px-4 bg-[#faa61a] hover:bg-[#e59418] text-white rounded-lg font-semibold">
+            <div x-show="selectedTab === 'mensaplan'" class="space-y-6">
+                <h2 class="text-3xl font-bold text-[#ff0077]">Post Mensaplan</h2>
+                <p class="text-lg">Force-post the current Mensaplan to all guilds:</p>
+                <button @click="toastMessage = 'Mensaplan posted successfully! 🎉'; toastType = 'success'" class="py-3 px-6 bg-[#faa61a] hover:bg-[#e59418] text-white rounded-lg font-semibold transition-all transform hover:scale-110">
                     Post Mensaplan
                 </button>
             </div>
 
-            <div x-show="selectedTab === 'url'" class="space-y-4">
-                <h2 class="text-2xl font-bold">Change Mensaplan URL</h2>
-                <p>Set a new URL for fetching the Mensaplan:</p>
-                <input type="url" class="w-full p-2 bg-[#40444b] text-gray-200 rounded-lg focus:outline-none" placeholder="Enter new URL">
-                <div class="flex space-x-4">
-                    <button @click="success = true; failure = false" class="py-2 px-4 bg-[#43b581] hover:bg-[#36a36b] text-white rounded-lg font-semibold">
+            <div x-show="selectedTab === 'url'" class="space-y-6">
+                <h2 class="text-3xl font-bold text-[#ff0077]">Change Mensaplan URL</h2>
+                <p class="text-lg">Set a new URL for fetching the Mensaplan:</p>
+                <input type="url" class="w-full p-3 bg-[#40444b] text-gray-200 rounded-lg focus:outline-none" placeholder="Enter new URL">
+                <div class="flex space-x-6">
+                    <button @click="toastMessage = 'URL saved successfully! 🎉'; toastType = 'success'" class="py-3 px-6 bg-[#43b581] hover:bg-[#36a36b] text-white rounded-lg font-semibold transition-all transform hover:scale-110">
                         Save URL
                     </button>
-                    <button @click="failure = true; success = false" class="py-2 px-4 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold">
+                    <button @click="toastMessage = 'Action failed. Please try again. 😔'; toastType = 'failure'" class="py-3 px-6 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold transition-all transform hover:scale-110">
                         Cancel
                     </button>
                 </div>
             </div>
 
-            <div x-show="selectedTab === 'verified'" class="space-y-4">
-                <h2 class="text-2xl font-bold">Verified Users</h2>
-                <table class="table-auto w-full text-left bg-[#23272a] border border-[#2c2f33] rounded-lg">
+            <div x-show="selectedTab === 'verified'" class="space-y-6">
+                <h2 class="text-3xl font-bold text-[#ff0077]">Verified Users</h2>
+                <table class="table-auto w-full text-left bg-[#23272a] border border-[#2c2f33] rounded-lg shadow-lg">
                     <thead class="bg-[#40444b] text-white">
                         <tr>
-                            <th class="py-2 px-4">User ID</th>
-                            <th class="py-2 px-4">Username</th>
-                            <th class="py-2 px-4">Email</th>
-                            <th class="py-2 px-4">Verified On</th>
+                            <th class="py-3 px-5">User ID</th>
+                            <th class="py-3 px-5">Username</th>
+                            <th class="py-3 px-5">Email</th>
+                            <th class="py-3 px-5">Verified On</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td class="py-2 px-4">123456</td>
-                            <td class="py-2 px-4">UserOne</td>
-                            <td class="py-2 px-4">userone@example.com</td>
-                            <td class="py-2 px-4">2024-12-01</td>
+                            <td class="py-3 px-5">1234</td>
+                            <td class="py-3 px-5">john_doe</td>
+                            <td class="py-3 px-5">johndoe@example.com</td>
+                            <td class="py-3 px-5">2025-01-20</td>
                         </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div x-show="selectedTab === 'users'" class="space-y-6">
+                <h2 class="text-3xl font-bold text-[#ff0077]">User Sign-Up Details</h2>
+                <table class="table-auto w-full text-left bg-[#23272a] border border-[#2c2f33] rounded-lg shadow-lg">
+                    <thead class="bg-[#40444b] text-white">
                         <tr>
-                            <td class="py-2 px-4">789101</td>
-                            <td class="py-2 px-4">UserTwo</td>
-                            <td class="py-2 px-4">us
+                            <th class="py-3 px-5">User ID</th>
+                            <th class="py-3 px-5">Username</th>
+                            <th class="py-3 px-5">Email</th>
+                            <th class="py-3 px-5">Date Joined</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="py-3 px-5">1234</td>
+                            <td class="py-3 px-5">john_doe</td>
+                            <td class="py-3 px-5">johndoe@example.com</td>
+                            <td class="py-3 px-5">2025-01-20</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </body>
+</html>

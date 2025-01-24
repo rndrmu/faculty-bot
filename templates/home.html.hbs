@@ -1,90 +1,118 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <!-- include partials/head.hbs -->
     {{> partials/head }}
     <title>faculty bot</title>
 </head>
-<body class="bg-[#2c2f33] text-gray-200 flex flex-col items-center justify-center min-h-screen">
+<body class="bg-[#2c2f33] text-gray-200 flex items-center justify-center min-h-screen">
 
-    <div class="text-center max-w-xl w-full p-6 bg-[#23272a] shadow-lg rounded-xl border border-[#2c2f33]">
-        <div class="text-6xl text-[#5865f2] mb-4">
+    <!-- blurred, translucent background -->
+    <div class="max-w-xl w-full p-6 shadow-lg rounded-2xl border border-[#2c2f33] text-center bg-[#23272a] bg-opacity-90 backdrop-blur-lg">
+        <!-- header -->
+        <div class="text-6xl text-[#9b59b6] mb-4 hover:animate-pulse">
             <i class="fas fa-cogs"></i>
         </div>
-        <h1 class="text-4xl font-bold text-gray-100 mb-4">
-            faculty bot dashboard
-        </h1>
-        <!-- version tag with beta badge -->
-        <div class="flex items-center justify-center gap-2">
-            <span class="text-xs text-gray-400">
-                v0.1.0
-            </span>
-            <span class="text-xs bg-[#5865f2] text-white px-2 py-1 rounded-full">
-                beta
-            </span>
-            
+        <div class="mt-4 flex items-center justify-center gap-2">
+            <h1 class="text-4xl font-bold text-white">faculty bot Dashboard</h1>
+            <span class="bg-[#9b59b6] text-white text-xs px-2 py-1 rounded-full ml-2 animate-pulse">alpha</span>
         </div>
 
+        <!-- version info -->
+        <p class="text-sm text-gray-400 mt-2">
+            version: 0.1.0
+        </p>
 
+        <!-- authentication and login actions -->
+        <div class="mt-4 flex flex-col items-center gap-2">
+            {{#if is_logged_in}}
+                <p class="text-sm text-gray-400 flex items-center">
+                    you're authenticated, welcome back! <i class="fas fa-check text-green-400 ml-2 mr-2"></i>
+                </p>
+                <a href="/api/auth/logout" class="bg-red-500 hover:bg-red-600 text-white text-sm px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-transform transform hover:scale-105">
+                    <i class="fas fa-sign-out-alt mr-2"></i> logout
+                </a>
+            {{else}}
+                <p class="text-sm text-gray-400 flex items-center">
+                    no login detected! <i class="fas fa-times text-red-400 ml-2"></i> let’s fix that.
+                </p>
+                <a href="/api/auth/discord" class="bg-blue-500 hover:bg-blue-600 text-white text-sm px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-transform transform hover:scale-105">
+                    <i class="fab fa-discord mr-2"></i> discord login
+                </a>
+            {{/if}}
+        </div>
+
+        <!-- collapsible info -->
         <div class="mt-6" x-data="{ open: false }">
-            <button @click="open = !open" class="text-sm text-gray-400 hover:text-gray-200 transition">
-                <i class="fas fa-info-circle mr-2"></i> important information
+            <button @click="open = !open" class="text-sm text-gray-300 hover:text-[#ff0077] transition duration-200 transform hover:rotate-3 focus:outline-none">
+                <i class="fas fa-info-circle mr-2"></i> life-changing information
             </button>
-            <div x-show="open" class="mt-2 text-gray-400">
-                <p>
-                    you should watch bocchi the rock :)
+            <div x-show="open" class="mt-2 text-gray-300 text-center transition-transform transform duration-300">
+                <p class="italic text-sm">
+                    bocchi the rock. give it a watch! NOW <i class="fas fa-heart text-[#ff0077]"></i> <br />
+                    <a href="https://myanimelist.net/anime/47917/Bocchi_the_Rock" target="_blank" class="text-[#ff0077] hover:text-[#ffcc00] transition duration-200 font-bold">
+                        dive in 
+                        <i class="fas fa-external-link-alt ml-1"></i>
+                    </a>
                 </p>
             </div>
         </div>
 
-        <p class="text-sm text-gray-400 mb-2 uppercase font-semibold tracking-wider text-center mt-4 border-b border-gray-700 w-full">
-            Important Links
+        <!-- navigation section -->
+        <p class="text-sm text-gray-400 uppercase font-semibold tracking-wider mt-8 mb-4 border-b border-gray-700">
+            where to next
         </p>
-
-        <!-- centre aligned 3 col grid -->
-        <div class="mt-4 grid grid-cols-3 gap-4 justify-items-center w-full mx-auto">
-            <a href="/api/auth/discord" class="text-sm text-gray-400 hover:text-gray-200 transition flex items-center mt-2">
-                <i class="fab fa-discord mr-2"></i> login
+        <div class="grid grid-cols-2 gap-4">
+            <a href="/verify" class="bg-gray-700 hover:bg-gray-600 text-white text-sm px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-transform transform hover:scale-105">
+                <i class="fas fa-check-circle mr-2"></i> verify
             </a>
-            <a href="/api/auth/logout" class="text-sm text-gray-400 hover:text-gray-200 transition flex items-center mt-2">
-                <i class="fas fa-sign-out-alt mr-2"></i> logout
+            <a href="/reverify" class="bg-gray-700 hover:bg-gray-600 text-white text-sm px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-transform transform hover:scale-105">
+                <i class="fas fa-sync mr-2"></i> reverify
             </a>
-            <a href="/api/auth/discord/callback" class="text-sm text-gray-400 hover:text-gray-200 transition flex items-center mt-2">
-                <i class="fas fa-user-circle mr-2"></i> profile
-            </a>
-            <a href="/verify" class="text-sm text-gray-400 hover:text-gray-200 transition flex items-center mt-2">
-                <i class="fas fa-user-check mr-2"></i> verify
-            </a>
-            
-            <a href="reverify" class="text-sm text-gray-400 hover:text-gray-200 transition flex items-center mt-2">
-                <i class="fas fa-user-check mr-2"></i> reverify
+            <a disabled href="#" class="bg-gray-700 text-gray-500 text-sm px-4 py-2 rounded-lg shadow-md cursor-not-allowed flex items-center justify-center gap-2">
+                <i class="fas fa-exchange-alt mr-2"></i> switch account
+                <span class="bg-[#9b59b6] text-white text-xs px-2 py-1 rounded-full ml-2">soon</span>
             </a>
 
-            <a href="switch-account" class="text-sm text-gray-400 hover:text-gray-200 transition flex items-center mt-2">
-                <i class="fas fa-user-check mr-2"></i> switch account
-            </a>
+
         </div>
 
-        <p class="text-sm text-gray-400 mb-2 uppercase font-semibold tracking-wider text-center mt-4 border-b border-gray-700 w-full">
-            Social Media
+        <!-- social media section -->
+        <p class="text-sm text-gray-400 uppercase font-semibold tracking-wider mt-8 mb-4 border-b border-gray-700">
+            socials
         </p>
-
-        <div class="mt-4 flex items-center justify-center gap-4">
-            <a href="https://github.com/rndrmu/faculty-bot" target="_blank" class="text-sm text-gray-400 hover:text-gray-200 transition flex items-center mt-2">
-                <i class="fab fa-github mr-2"></i> github repo
+        <div class="flex items-center justify-center gap-4">
+            <a href="https://github.com/rndrmu/faculty-bot" target="_blank" class="text-sm text-gray-400 hover:text-gray-200 transition">
+                <i class="fab fa-github mr-2"></i> contribute on github
             </a>
-            <a href="https://x.com/rndrmu" target="_blank" class="text-sm text-gray-400 hover:text-gray-200 transition flex items-center mt-2">
-                <i class="fa-brands fa-x-twitter mr-2"></i> X (formerly Twitter)
+            <a href="https://x.com/rndrmu" target="_blank" class="text-sm text-gray-400 hover:text-gray-200 transition">
+                <i class="fab fa-x-twitter mr-2"></i> follow me on x
             </a>
-            <a href="https://rndrmu.moe" target="_blank" class="text-sm text-gray-400 hover:text-gray-200 transition flex items-center mt-2">
-                <i class="fas fa-globe mr-2"></i> website
+            <a href="https://rndrmu.moe" target="_blank" class="text-sm text-gray-400 hover:text-gray-200 transition">
+                <i class="fas fa-globe mr-2"></i> explore my blog
             </a>
-            <!-- <i class="fa-brands fa-bluesky"></i> -->
-            <a href="https://rndrmu.bsky.social" target="_blank" class="text-sm text-gray-400 hover:text-gray-200 transition flex items-center mt-2">
-                <i class="fa-brands fa-bluesky mr-2"></i> bluesky
+            <a href="https://rndrmu.bsky.social" target="_blank" class="text-sm text-gray-400 hover:text-gray-200 transition">
+                <i class="fab fa-bluesky mr-2"></i> follow me on bluesky
             </a>
         </div>
     </div>
 
 </body>
 </html>
+
+<style>
+/* smooth background transition */
+@keyframes gradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+body {
+    background: linear-gradient(45deg, 
+        #ff6b6b, #f093fb, #6fa3ef, #f9ca24, #1dd1a1
+    );
+    
+    background-size: 400% 400%;
+    animation: gradient 15s ease infinite;
+}
+</style>

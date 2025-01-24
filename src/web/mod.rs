@@ -1,7 +1,7 @@
 pub mod api;
 pub mod auth;
 pub mod structs;
-use auth::{AdminUser, AuthenticatedUser, Roles, User};
+use auth::{is_logged_in, AdminUser, AuthenticatedUser, Roles, User};
 use rocket_dyn_templates::Template;
 
 
@@ -9,8 +9,15 @@ use rocket_dyn_templates::Template;
 
 
 #[get("/")]
-pub fn index() -> Template {
-    Template::render("home", &{})
+pub async fn index(
+    jar: &CookieJar<'_>,
+) -> Template {
+    let is_logged_in = is_logged_in(jar).await;
+    Template::render("home", &{
+        let mut context = std::collections::HashMap::new();
+        context.insert("is_logged_in", is_logged_in);
+        context
+    })
 }
 
 #[get("/reverify")]

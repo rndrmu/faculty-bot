@@ -165,3 +165,12 @@ impl<'r> FromRequest<'r> for AuthenticatedUser<'r> {
         }
     }
 }
+
+
+pub async fn is_logged_in(jar: &CookieJar<'_>) -> bool {
+    let key = jar.get("token").map(|cookie| cookie.value());
+    match key {
+        None => false,
+        Some(key) => User::verify_token(key),
+    }
+}
