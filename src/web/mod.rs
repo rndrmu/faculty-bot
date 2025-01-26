@@ -7,17 +7,25 @@ use rocket_dyn_templates::Template;
 
 
 
+#[derive(serde::Serialize)]
+struct HomeContext {
+    is_logged_in: bool,
+    is_admin: bool,
+}
 
 #[get("/")]
 pub async fn index(
     jar: &CookieJar<'_>,
 ) -> Template {
     let is_logged_in = is_logged_in(jar).await;
-    Template::render("home", &{
-        let mut context = std::collections::HashMap::new();
-        context.insert("is_logged_in", is_logged_in);
-        context
-    })
+    let is_admin = User::user_has_role(jar.get("token").map(|cookie| cookie.value()).unwrap_or_default(), Roles::Admin);
+    
+    let ctx = HomeContext {
+        is_logged_in,
+        is_admin,
+    };
+    
+    Template::render("home", &ctx)
 }
 
 #[get("/reverify")]

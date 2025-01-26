@@ -72,6 +72,19 @@
                 <i class="fas fa-exchange-alt mr-2"></i> switch account
                 <span class="bg-[#9b59b6] text-white text-xs px-2 py-1 rounded-full ml-2">soon</span>
             </a>
+            <!-- admin panel -->
+            {{#if is_admin}}
+                <a href="/admin" class="bg-gray-700 hover:bg-gray-600 text-white text-sm px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-transform transform hover:scale-105">
+                    <i class="fas fa-user-shield mr-2"></i> admin panel
+                </a>
+                <a href="/settings" class="bg-gray-700 hover:bg-gray-600 text-white text-sm px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-transform transform hover:scale-105">
+                    <i class="fas fa-cog mr-2"></i> settings
+                </a>
+                <a href="/management-console" class="bg-gray-700 hover:bg-gray-600 text-white text-sm px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-transform transform hover:scale-105">
+                    <i class="fas fa-terminal mr-2"></i> management console
+                </a>
+            {{/if}}
+            <!-- end admin panel -->
 
 
         </div>
