@@ -18,4 +18,5 @@ pub struct Response<T> {
 #[derive(Deserialize)]
 pub  struct Code {
     pub code: String,
+    pub email: String,
 }

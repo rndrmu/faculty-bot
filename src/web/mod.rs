@@ -41,8 +41,11 @@ pub fn login() -> Template {
 }
 
 #[get("/logout")]
-pub fn logout() -> Template {
+pub fn logout(jar: &CookieJar<'_>) -> Template {
+    jar.remove("token");
+    
     Template::render("logout", &{})
+
 }
 
 

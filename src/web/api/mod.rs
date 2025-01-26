@@ -53,7 +53,7 @@ pub fn discord_auth() -> Redirect {
     let client_id = std::env::var("DISCORD_CLIENT_ID").expect("DISCORD_CLIENT_ID must be set");
     let redirect_uri = std::env::var("DISCORD_REDIRECT_URI").expect("DISCORD_REDIRECT_URI must be set");
     let redirect_uri = format!("{}", redirect_uri);
-    let discord_auth_url = format!("https://discord.com/api/oauth2/authorize?client_id={}&redirect_uri={}&response_type=code&scope=identify", client_id, redirect_uri);
+    let discord_auth_url = format!("https://discord.com/api/oauth2/authorize?client_id={}&redirect_uri={}&response_type=code&scope=identify+guilds", client_id, redirect_uri);
     Redirect::to(discord_auth_url)
 }
 
@@ -68,7 +68,24 @@ pub async fn discord_callback(code: String, jar: &CookieJar<'_>) -> Result<Templ
     // Get user info
     let user_info = get_discord_user(&client, &token_response.access_token).await
         .map_err(|_| rocket::http::Status::InternalServerError)?;
-    
+
+    let guilds = get_discord_guilds(&client, &token_response.access_token).await
+        .map_err(|_| rocket::http::Status::InternalServerError)?;
+
+    // check if they are a member of the correct guild (specified in .env DISCORD_SERVER_ID)
+    let guild_id = std::env::var("DISCORD_SERVER_ID").expect("DISCORD_SERVER_ID must be set");
+    let guild_id = guild_id.parse::<u64>().expect("DISCORD_SERVER_ID must be a number");
+    let is_member = guilds.iter().any(|guild| guild.id.parse::<u64>().unwrap() == guild_id);
+
+    if !is_member {
+        return Ok(Template::render("noAccess", &{
+            let mut context = std::collections::HashMap::new();
+            context.insert("serverName", "HS Kempten".to_string());
+            context
+        }));
+    }
+
+
     // Create user token and set cookie
     let user = User::new(user_info.id.parse().unwrap());
     // if id is 242385294123335690 give admin role
@@ -139,3 +156,24 @@ async fn get_discord_user(client: &reqwest::Client, access_token: &str) -> Resul
         .json()
         .await
 }
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+#[non_exhaustive]
+pub struct Guild {
+    id: String,
+    name: String,
+    icon: Option<String>,
+    owner: bool,
+    permissions: u64,
+}
+
+pub async fn get_discord_guilds(client: &reqwest::Client, access_token: &str) -> Result<Vec<Guild>, reqwest::Error> {
+    client.get("https://discord.com/api/users/@me/guilds")
+        .header("Authorization", format!("Bearer {}", access_token))
+        .send()
+        .await?
+        .json::<Vec<Guild>>()
+        .await
+}
+

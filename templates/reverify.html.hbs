@@ -70,6 +70,10 @@
             </button>
         </form>
 
+        <form x-show="step === 3" x-transition class="space-y-4">
+            <p class="text-gray-300">Dein Account ist jetzt verifiziert. Viel Spaß beim Weiterstudieren! 🎉</p>
+        </form>
+
         <!-- Success Modal -->
         <div x-show="success" x-transition class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div class="bg-[#2c2f33] p-6 rounded-xl text-center w-96">
@@ -147,7 +151,7 @@
                         const json = await res.json();
 
                         if (json.status === 200) {
-                            this.success = true;
+                            this.step = 3;
                         } else {
                             throw new Error('verification failed');
                         }
