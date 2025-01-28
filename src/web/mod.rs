@@ -56,6 +56,13 @@ pub fn logout(jar: &CookieJar<'_>) -> Template {
 
 }
 
+#[get("/setup")]
+pub fn setup() -> Template {
+    
+    Template::render("setup", &{})
+
+}
+
 
 
 

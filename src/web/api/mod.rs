@@ -111,12 +111,12 @@ pub async fn discord_callback(code: String, jar: &CookieJar<'_>) -> Result<Templ
 }
 
 #[derive(Deserialize)]
-struct TokenResponse {
+pub struct TokenResponse {
     access_token: String,
 }
 
 #[derive(Deserialize)]
-struct UserInfo {
+pub struct UserInfo {
     id: String,
     username: String,
     avatar: String,
@@ -124,11 +124,11 @@ struct UserInfo {
 
 impl UserInfo {
     fn get_avatar_url(&self) -> String {
-        if self.avatar.starts_with("a_") {
-            format!("https://cdn.discordapp.com/avatars/{}/{}.gif", self.id, self.avatar)
-        } else {
-            format!("https://cdn.discordapp.com/avatars/{}/{}.png", self.id, self.avatar)
-        }
+        let ext = if self.avatar.starts_with("a_") { "gif" } else { "png" };
+        format!(
+            "https://cdn.discordapp.com/avatars/{}/{}.{}",
+            self.id, self.avatar, ext
+        )
     }
 }
 
@@ -177,3 +177,65 @@ pub async fn get_discord_guilds(client: &reqwest::Client, access_token: &str) ->
         .await
 }
 
+use reqwest::Client;
+use serde::de::DeserializeOwned;
+
+#[derive(Clone)]
+pub struct DiscordOAuthClient {
+    client: Client,
+    client_id: String,
+    client_secret: String,
+    redirect_uri: String,
+    api_base: String,
+}
+
+impl DiscordOAuthClient {
+    pub fn new() -> Result<Self, std::env::VarError> {
+        Ok(Self {
+            client: Client::new(),
+            client_id: std::env::var("DISCORD_CLIENT_ID")?,
+            client_secret: std::env::var("DISCORD_CLIENT_SECRET")?,
+            redirect_uri: std::env::var("DISCORD_REDIRECT_URI")?,
+            api_base: "https://discord.com/api".to_string(),
+        })
+    }
+
+    pub async fn exchange_code(&self, code: &str) -> Result<TokenResponse, reqwest::Error> {
+        let form = [
+            ("client_id", &self.client_id),
+            ("client_secret", &self.client_secret),
+            ("grant_type", &"authorization_code".to_string()),
+            ("code", &code.to_string()),
+            ("redirect_uri", &self.redirect_uri),
+            ("scope", &"identify".to_string()),
+        ];
+
+        self.client.post(format!("{}/oauth2/token", self.api_base))
+            .form(&form)
+            .send()
+            .await?
+            .json()
+            .await
+    }
+
+    pub async fn get_current_user(&self, access_token: &str) -> Result<UserInfo, reqwest::Error> {
+        self.get_authenticated_resource("users/@me", access_token).await
+    }
+
+    pub async fn get_user_guilds(&self, access_token: &str) -> Result<Vec<Guild>, reqwest::Error> {
+        self.get_authenticated_resource("users/@me/guilds", access_token).await
+    }
+
+    async fn get_authenticated_resource<T: DeserializeOwned>(
+        &self,
+        endpoint: &str,
+        access_token: &str
+    ) -> Result<T, reqwest::Error> {
+        self.client.get(format!("{}/{}", self.api_base, endpoint))
+            .header("Authorization", format!("Bearer {}", access_token))
+            .send()
+            .await?
+            .json()
+            .await
+    }
+}

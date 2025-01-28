@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Faculty Bot Setup</title>
+    {{> partials/head }}
+</head>
+<body class="bg-[#2c2f33] text-gray-200 flex items-center justify-center min-h-screen">
+    <div class="max-w-5xl w-full p-6 bg-[#23272a] shadow-lg rounded-xl border border-[#2c2f33] text-left">
+        <h1 class="text-3xl font-bold text-gray-100 mb-4">faculty bot setup</h1>
+        
+        <div class="text-lg text-gray-400 mb-4">
+            <p>this bot manages faculty tasks within discord. follow the steps below to get it running:</p>
+        </div>
+        
+        <h2 class="text-2xl font-semibold text-gray-100 mb-3">1. install docker</h2>
+        <p class="text-gray-400 mb-4">
+            install docker from <a href="https://docs.docker.com/get-docker/" class="text-[#5865f2] hover:text-[#4752c4]">here <i class="fas fa-external-link-alt"></i></a>.
+        </p>
+
+        <h2 class="text-2xl font-semibold text-gray-100 mb-3">2. download the release archive</h2>
+        <p class="text-gray-400 mb-4">
+            download the latest release from 
+            <a href="https://github.com/rndrmu/faculty-bot/releases/latest" class="text-[#5865f2] hover:text-[#4752c4]">here <i class="fas fa-external-link-alt"></i></a>
+            and extract it.
+        </p>
+
+        <h2 class="text-2xl font-semibold text-gray-100 mb-3">3. create a .env file</h2>
+        <p class="text-gray-400 mb-4">
+            create a 
+            <code class="text-[#5865f2] font-semibold bg-[#2c2f33] p-1 rounded-md">.env</code>
+            file in the root directory of the extracted archive. below is an explanation of each key:
+        </p>
+        
+        <h3 class="text-xl font-semibold text-gray-100 mb-2">discord bot setup</h3>
+        <ul class="text-gray-400 mb-4">
+            <li><code class="text-[#5865f2] font-semibold bg-[#2c2f33] p-1 rounded-md">DISCORD_TOKEN</code>: the token for your discord bot, generated from the discord dev portal.</li>
+            <li><code class="text-[#5865f2] font-semibold bg-[#2c2f33] p-1 rounded-md">DISCORD_CLIENT_ID</code>: the client id of your discord app, also found in the dev portal. Either within the <code class="text-[#5865f2] font-semibold bg-[#2c2f33] p-1 rounded-md">OAuth2</code> tab or simply your bots' id.</li>
+            <li><code class="text-[#5865f2] font-semibold bg-[#2c2f33] p-1 rounded-md">DISCORD_CLIENT_SECRET</code>: your discord app’s client secret from the dev portal. Found in the <code class="text-[#5865f2] font-semibold bg-[#2c2f33] p-1 rounded-md">OAuth2</code> tab.</li>
+            <li>
+                <code class="text-[#5865f2] font-semibold bg-[#2c2f33] p-1 rounded-md">DISCORD_REDIRECT_URI</code>: 
+                set to your local bot’s callback URL, e.g. 
+                <code class="text-[#5865f2] font-semibold bg-[#2c2f33] p-1 rounded-md">http://localhost:8000/api/auth/discord/callback</code>, however this one must be set in the discord dev portal.‚
+                This one is also set in the <code class="text-[#5865f2] font-semibold bg-[#2c2f33] p-1 rounded-md">OAuth2</code> tab.
+                </li>
+            <li><code class="text-[#5865f2] font-semibold bg-[#2c2f33] p-1 rounded-md">DISCORD_SERVER_ID</code>: the id of your discord server (where the bot will run).
+                If you are in the browser, it is the first long number after <code class="text-[#5865f2] font-semibold bg-[#2c2f33] p-1 rounded-md">/channels/</code>.
+                <br> If you are in the discord app, right-click on the server name and click <code class="text-[#5865f2] font-semibold bg-[#2c2f33] p-1 rounded-md">Copy ID</code> to get the server id, if you have developer mode enabled.
+            </li>
+        </ul>
+        
+        <h3 class="text-xl font-semibold text-gray-100 mb-2">database & smtp setup</h3>
+        <ul class="text-gray-400 mb-4">
+            <li><code class="text-[#5865f2] font-semibold bg-[#2c2f33] p-1 rounded-md">DATABASE_URL</code>: your postgres db URL (e.g. <code class="text-[#5865f2] font-semibold bg-[#2c2f33] p-1 rounded-md">postgres://user:password@localhost:5432/dbname</code>).</li>
+            <li><code class="text-[#5865f2] font-semibold bg-[#2c2f33] p-1 rounded-md">MAIL_USERNAME</code>: your smtp login username.</li>
+            <li><code class="text-[#5865f2] font-semibold bg-[#2c2f33] p-1 rounded-md">MAIL_PASSWORD</code>: your smtp login password.</li>
+            <li><code class="text-[#5865f2] font-semibold bg-[#2c2f33] p-1 rounded-md">SMTP_SERVER</code>: the address of your smtp server.</li>
+            <li><code class="text-[#5865f2] font-semibold bg-[#2c2f33] p-1 rounded-md">SMTP_PORT</code>: typically <code class="text-[#5865f2] font-semibold bg-[#2c2f33] p-1 rounded-md">587</code> for secure smtp.</li>
+            <li><code class="text-[#5865f2] font-semibold bg-[#2c2f33] p-1 rounded-md">SEND_FROM_ADDRESS</code>: the email address your bot sends from (e.g. <code class="text-[#5865f2] font-semibold bg-[#2c2f33] p-1 rounded-md">noreply@yourdomain.com</code>).</li>
+        </ul>
+
+        <h3 class="text-xl font-semibold text-gray-100 mb-2">influxdb & security setup</h3>
+        <ul class="text-gray-400 mb-4">
+            <li><code class="text-[#5865f2] font-semibold bg-[#2c2f33] p-1 rounded-md">INFLUX_TOKEN</code>: token for your InfluxDB instance, if you’re using it for logging.</li>
+            <li><code class="text-[#5865f2] font-semibold bg-[#2c2f33] p-1 rounded-md">SECRET_KEY</code>: a secret key used for signing JWT tokens.</li>
+        </ul>
+
+        <h3 class="text-xl font-semibold text-gray-100 mb-2">logging</h3>
+        <ul class="text-gray-400 mb-4">
+            <li><code class="text-[#5865f2] font-semibold bg-[#2c2f33] p-1 rounded-md">RUST_LOG</code>: the logging level for the Rust app, typically <code class="text-[#5865f2] font-semibold bg-[#2c2f33] p-1 rounded-md">warn</code>.</li>
+        </ul>
+        
+        <pre class="bg-[#2c2f33] text-gray-300 p-2 rounded-md overflow-x-auto whitespace-pre-wrap text-sm font-mono mb-4 rounded-md w-full max-w-5xl break-words">
+# discord bot token
+DISCORD_TOKEN=
+
+# discord app client id (found in the discord dev portal)
+DISCORD_CLIENT_ID=
+
+# discord app client secret (found in the discord dev portal)
+DISCORD_CLIENT_SECRET=
+
+# redirect uri (must end with /api/auth/discord/callback)
+DISCORD_REDIRECT_URI=http://localhost:8000/api/auth/discord/callback
+
+# discord server id
+DISCORD_SERVER_ID=
+
+# postgres db connection string (e.g. postgres://user:password@localhost:5432/dbname)
+DATABASE_URL=
+
+# bot command prefix (deprecated for webui and slash commands)
+PREFIX=
+
+# smtp login details
+MAIL_USERNAME=
+MAIL_PASSWORD=
+SMTP_SERVER=
+SMTP_PORT=
+
+# email to send from (e.g. noreply@whitehouse.gov)
+SEND_FROM_ADDRESS=
+
+# influxdb token
+INFLUX_TOKEN=
+
+# key for signing JWT tokens
+SECRET_KEY=
+
+# logging level for rust app
+RUST_LOG=warn
+        </pre>
+
+        <h2 class="text-2xl font-semibold text-gray-100 mb-3">4. register the bot</h2>
+        <p class="text-gray-400 mb-4">
+            go to <a href="https://discord.dev" class="text-[#5865f2] hover:text-[#4752c4]">discord's developer portal</a> to register your bot, then add the generated token to your `.env` file.
+        </p>
+
+        <h2 class="text-2xl font-semibold text-gray-100 mb-3">5. launch the bot</h2>
+        <p class="text-gray-400 mb-4">choose one of the following methods to launch the bot:</p>
+
+        <h3 class="text-xl font-semibold text-gray-100 mb-2">easiest method</h3>
+        <p class="text-gray-400 mb-4">edit the <code class="text-[#5865f2] font-semibold bg-[#2c2f33] p-1 rounded-md">docker-compose.yml</code> file, then run:</p>
+        <pre class="bg-[#2c2f33] text-gray-300 p-2 rounded-md">docker compose up</pre>
+
+        <div class="flex flex-col items-center justify-center gap-4 mt-6">
+            <a href="/" class="inline-block px-6 py-3 text-sm font-medium text-white bg-[#5865f2] rounded-lg shadow-lg hover:bg-[#4752c4] transition">
+                <i class="fas fa-home mr-2"></i> go back to the homepage
+            </a>
+        </div>
+    </div>
+</body>
+</html>
