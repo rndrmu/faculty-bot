@@ -2,152 +2,138 @@
 <html lang="de">
 <head>
     {{> partials/head }}
-    <title>Faculty Bot</title>
+    <title>faculty bot</title>
 </head>
-<body class="flex items-center justify-center min-h-screen">
+<body class="bg-[#2c2f33] text-gray-200 flex items-center justify-center min-h-screen">
 
-<!-- Main container -->
-<div class="max-w-xl w-full p-6 rounded-2xl border border-[#6d58a3] bg-[#1a1c22]/95 backdrop-blur-xl shadow-xl transition-all duration-300 hover:shadow-2xl">
-    
-    <!-- Header section -->
-    <header class="space-y-4 mb-8">
-        <div class="flex items-center justify-center gap-3">
-            <h1 class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#9b59b6] to-[#ec4899] lowercase">
-                faculty manager web-ui
-            </h1>
+    <!-- blurred, translucent background -->
+    <div class="max-w-xl w-full p-6 shadow-lg rounded-2xl border border-[#2c2f33] text-center bg-[#23272a] bg-opacity-90 backdrop-blur-lg">
+        <!-- header -->
+        <div class="text-6xl text-[#9b59b6] mb-4 hover:animate-pulse">
+            <i class="fas fa-cogs"></i>
         </div>
+        <div class="mt-4 flex items-center justify-center gap-2">
+            <h1 class="text-4xl font-bold text-white">faculty manager Dashboard</h1>
+        </div>
+
+        <!-- version info -->
+        <p class="text-sm text-gray-400 mt-2">
+            version: 0.1.0
+        </p>
+
         
-        <!-- Version badge -->
-        <div class="flex items-center justify-center">
-            <span class="bg-[#6d58a3]/40 text-[#c2b5e6] text-xs px-3 py-1 rounded-full border border-[#6d58a3]/50">
-                v0.1.0 alpha
-            </span>
-        </div>
 
-
-    </header>
-
-    <!-- Authentication block -->
-    <section class="space-y-6 mb-12">
-        {{#if is_logged_in}}
-            <div class="flex items-center justify-center gap-2 text-[#6ee7b7]/90">
-                <i class="fas fa-check-circle text-sm"></i>
-                <span class="text-sm font-medium">Authenticated successfully</span>
-            </div>
-            <a href="/logout" 
-               class="w-full py-3 px-6 bg-gradient-to-r from-[#be123c]/30 to-[#9f1239]/40 border border-[#9f1239]/50 text-[#ffe4e6] rounded-xl flex items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] hover:shadow-lg">
-                <i class="fas fa-sign-out-alt"></i>
-                Log Out
-            </a>
-        {{else}}
-            <div class="flex items-center justify-center gap-2 text-[#fcd34d]/90">
-                <i class="fas fa-exclamation-circle text-sm"></i>
-                <span class="text-sm font-medium">Authentication required</span>
-            </div>
-            <a href="/api/auth/discord" 
-               class="w-full py-3 px-6 bg-gradient-to-r from-[#6d58a3]/30 to-[#4f46e5]/40 border border-[#6366f1]/50 text-[#e0d7f7] rounded-xl flex items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] hover:shadow-lg">
-                <i class="fab fa-discord"></i>
-                Discord Login
-            </a>
-        {{/if}}
-    </section>
-
-    <!-- Quick actions grid -->
-    <section class="mb-12">
-        <h2 class="text-sm text-[#c2b5e6]/80 uppercase font-semibold tracking-wider mb-4">
-            Quick Actions
-        </h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <!-- authentication and login actions -->
+                <div class="mt-8 space-y-6">
             {{#if is_logged_in}}
-                <a href="/verify" 
-                   class="p-3.5 text-sm rounded-lg bg-[#1a1c22]/50 border border-[#25272e] hover:bg-[#1a1c22]/40 hover:border-[#2c2f33] transition-all duration-200 flex items-center justify-center gap-2">
-                    <i class="fas fa-check-circle"></i> Verify
-                </a>
-                <a href="/reverify" 
-                   class="p-3.5 text-sm rounded-lg bg-[#1a1c22]/50 border border-[#25272e] hover:bg-[#1a1c22]/40 hover:border-[#2c2f33] transition-all duration-200 flex items-center justify-center gap-2">
-                    <i class="fas fa-sync"></i> Reverify
-                </a>
-                <div class="p-3.5 text-sm rounded-lg bg-[#1a1c22]/50 border border-[#25272e] cursor-not-allowed flex items-center justify-center gap-2">
-                    <i class="fas fa-exchange-alt"></i> Switch Account
-                    <span class="bg-[#6d58a3]/40 text-[#c2b5e6] text-xs px-2 py-1 rounded-full">Soon</span>
+                <div class="flex items-center justify-center gap-2 text-emerald-400">
+                    <i class="fas fa-check-circle"></i>
+                    <span class="text-sm">
+                        You are authenticated. Welcome back!
+                    </span>
                 </div>
+                <a href="/logout" class="block w-full py-3 px-6 bg-gradient-to-r from-red-500/30 to-rose-600/30 hover:from-red-500/40 hover:to-rose-600/40 text-red-200 rounded-xl border border-red-500/30 flex items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02]">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Log Out
+                </a>
+            {{else}}
+                <div class="flex items-center justify-center gap-2 text-rose-400">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span class="text-sm">
+                        Seems like you're not authenticated. Please log in.
+                    </span>
+                </div>
+                <a href="/api/auth/discord" 
+                class="block w-full py-3 px-6 bg-gradient-to-r from-purple-500/30 to-blue-600/30 hover:from-purple-500/40 hover:to-blue-600/40 text-purple-200 rounded-xl border border-purple-500/30 flex items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02]">
+                    <i class="fab fa-discord"></i>
+                    Discord Login
+                </a>
             {{/if}}
-            
+        </div>
+
+        <!-- collapsible info -->
+        
+
+        <!-- navigation section -->
+        <p class="text-sm text-gray-400 uppercase font-semibold tracking-wider mt-8 mb-4">
+            quick actions
+        </p>
+        <hr class="border-[#9b59b6] w-1/2 mx-auto mb-4">
+        <div class="grid grid-cols-2 gap-4">
+            <a href="/verify" class="bg-gray-700 hover:bg-gray-600 text-white text-sm px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-transform transform hover:scale-105">
+                <i class="fas fa-check-circle mr-2"></i> verify
+            </a>
+            <a href="/reverify" class="bg-gray-700 hover:bg-gray-600 text-white text-sm px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-transform transform hover:scale-105">
+                <i class="fas fa-sync mr-2"></i> reverify
+            </a>
+            <a disabled href="#" class="bg-gray-700 text-gray-500 text-sm px-4 py-2 rounded-lg shadow-md cursor-not-allowed flex items-center justify-center gap-2">
+                <i class="fas fa-exchange-alt mr-2"></i> switch account
+                <span class="bg-[#9b59b6] text-white text-xs px-2 py-1 rounded-full ml-2">soon</span>
+            </a>
+            <!-- admin panel -->
             {{#if is_admin}}
-                <a href="/admin" 
-                   class="p-3.5 text-sm rounded-lg bg-[#1a1c22]/50 border border-[#25272e] hover:bg-[#1a1c22]/40 hover:border-[#2c2f33] transition-all duration-200 flex items-center justify-center gap-2">
-                    <i class="fas fa-user-shield"></i> Admin Panel
+                <a href="/admin" class="bg-gray-700 hover:bg-gray-600 text-white text-sm px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-transform transform hover:scale-105">
+                    <i class="fas fa-user-shield mr-2"></i> admin panel
                 </a>
-                <a href="/settings" 
-                   class="p-3.5 text-sm rounded-lg bg-[#1a1c22]/50 border border-[#25272e] hover:bg-[#1a1c22]/40 hover:border-[#2c2f33] transition-all duration-200 flex items-center justify-center gap-2">
-                    <i class="fas fa-cog"></i> Settings
+                <a href="/settings" class="bg-gray-700 hover:bg-gray-600 text-white text-sm px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-transform transform hover:scale-105">
+                    <i class="fas fa-cog mr-2"></i> settings
                 </a>
-                <a href="/management-console" 
-                   class="p-3.5 text-sm rounded-lg bg-[#1a1c22]/50 border border-[#25272e] hover:bg-[#1a1c22]/40 hover:border-[#2c2f33] transition-all duration-200 flex items-center justify-center gap-2">
-                    <i class="fas fa-terminal"></i> Console
+                <a href="/management-console" class="bg-gray-700 hover:bg-gray-600 text-white text-sm px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-transform transform hover:scale-105">
+                    <i class="fas fa-terminal mr-2"></i> management console
                 </a>
             {{/if}}
-        </div>
-    </section>
+            <!-- end admin panel -->
 
-    <!-- Link sections -->
-    <section class="space-y-8">
-        <div class="link-group">
-            <h2 class="text-sm text-[#c2b5e6]/80 uppercase font-semibold tracking-wider mb-4">
-                Resources
-            </h2>
-            <div class="flex justify-center gap-4">
-                <a href="https://github.com/rndrmu/faculty-bot" target="_blank" 
-                   class="text-sm text-[#c2b5e6]/80 hover:text-[#e0d7f7] transition-colors flex items-center gap-2 px-3 py-1.5 rounded-md">
-                    <i class="fab fa-github"></i> GitHub
-                </a>
-                <a href="/setup" 
-                   class="text-sm text-[#c2b5e6]/80 hover:text-[#e0d7f7] transition-colors flex items-center gap-2 px-3 py-1.5 rounded-md">
-                    <i class="fas fa-info-circle"></i> Setup Guide
-                </a>
+
+        </div>
+
+        <p class="text-sm text-gray-400 uppercase font-semibold tracking-wider mt-8 mb-4">
+            resources
+        </p>
+        <div class="flex items-center justify-center gap-4">
+             <a href="https://github.com/rndrmu/faculty-bot" target="_blank" class="text-sm text-gray-400 hover:text-gray-200 transition">
+                <i class="fab fa-github mr-2"></i> contribute on github
+            </a>
+             <a href="/setup" class="text-sm text-gray-400 hover:text-gray-200 transition">
+                <i class="fas fa-info-circle mr-2"></i> setup guide
+            </a>
+           
+            <a href="https://x.com/rndrmu" target="_blank" class="text-sm text-gray-400 hover:text-gray-200 transition">
+                <i class="fab fa-x-twitter mr-2"></i> twitter
+            </a>
+            <a href="https://rndrmu.moe" target="_blank" class="text-sm text-gray-400 hover:text-gray-200 transition">
+                <i class="fas fa-globe mr-2"></i> blog
+            </a>
+            <a href="https://rndrmu.bsky.social" target="_blank" class="text-sm text-gray-400 hover:text-gray-200 transition">
+                <i class="fab fa-bluesky mr-2"></i> bluesky
+            </a>
+           
+        </div>
+
+            <hr class="border-[#9b59b6] w-1/2 mx-auto my-8">
+    <div class="mt-6" x-data="{ open: false }">
+            <button @click="open = !open" class="text-sm text-gray-300 hover:text-[#ff0077] transition duration-200 transform hover:rotate-3 focus:outline-none">
+                <i class="fas fa-info-circle mr-2"></i> life-changing information
+            </button>
+            <div x-show="open" class="mt-2 text-gray-300 text-center transition-transform transform duration-300">
+                <p class="italic text-sm">
+                    bocchi the rock. give it a watch! NOW <i class="fas fa-heart text-[#ff0077]"></i> <br />
+                    <a href="https://myanimelist.net/anime/47917/Bocchi_the_Rock" target="_blank" class="text-[#ff0077] hover:text-[#ffcc00] transition duration-200 font-bold">
+                        dive in 
+                        <i class="fas fa-external-link-alt ml-1"></i>
+                    </a>
+                </p>
             </div>
-        </div>
-
-        <div class="link-group">
-            <h2 class="text-sm text-[#c2b5e6]/80 uppercase font-semibold tracking-wider mb-4">
-                Socials
-            </h2>
-            <div class="flex justify-center gap-4">
-                <a href="https://x.com/rndrmu" target="_blank" 
-                   class="text-sm text-[#c2b5e6]/80 hover:text-[#e0d7f7] transition-colors flex items-center gap-2 px-3 py-1.5 rounded-md">
-                    <i class="fab fa-x-twitter"></i> X
-                </a>
-                <a href="https://rndrmu.moe" target="_blank" 
-                   class="text-sm text-[#c2b5e6]/80 hover:text-[#e0d7f7] transition-colors flex items-center gap-2 px-3 py-1.5 rounded-md">
-                    <i class="fas fa-globe"></i> Blog
-                </a>
-                <a href="https://rndrmu.bsky.social" target="_blank" 
-                   class="text-sm text-[#c2b5e6]/80 hover:text-[#e0d7f7] transition-colors flex items-center gap-2 px-3 py-1.5 rounded-md">
-                    <i class="fab fa-bluesky"></i> Bluesky
-                </a>
-            </div>
-        </div>
-    </section>
-
-    <!-- Easter egg section -->
-    <div class="mt-10" x-data="{ open: false }">
-        <button @click="open = !open" 
-                class="text-sm text-[#c2b5e6]/70 hover:text-[#ec4899] transition-colors duration-200 focus:outline-none flex items-center justify-center gap-1.5">
-            <i class="fas fa-info-circle"></i> Life-changing Info
-        </button>
-        <div x-show="open" x-collapse class="text-[#c2b5e6]/80 text-center mt-2">
-            <p class="italic text-sm">
-                Bocchi The Rock - Ultimate Experience! 
-                <a href="https://myanimelist.net/anime/47917/Bocchi_the_Rock" target="_blank" 
-                   class="text-[#ec4899] hover:text-[#c084fc] transition-colors font-bold">
-                    Dive In <i class="fas fa-external-link-alt ml-1.5"></i>
-                </a>
-            </p>
         </div>
     </div>
-</div>
+
+
+
+</body>
+</html>
 
 <style>
+/* smooth background transition */
 @keyframes gradient {
     0% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
@@ -155,21 +141,11 @@
 }
 
 body {
-    background: linear-gradient(-45deg, 
-        #2c2f33, #23272a, #2c2f33, #36393f, #40444b
+    background: linear-gradient(45deg, 
+         #f093fb, #6fa3ef, #bc76e3, #f093fb
     );
+    
     background-size: 400% 400%;
-    animation: gradient 20s ease infinite;
-}
-
-@keyframes fade-in {
-    from { opacity: 0; transform: translateY(-5px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.animate-fade-in {
-    animation: fade-in 0.3s ease-out;
+    animation: gradient 15s ease infinite;
 }
 </style>
-</body>
-</html>
