@@ -6,9 +6,6 @@ use crate::{
     tasks, utils::{self, generate_verification_code}, Data,
 };
 
-
-
-use influxdb2::models::DataPoint;
 use poise::serenity_prelude::{self as serenity, AttachmentType, Mentionable};
 use tracing::{debug, info};
 

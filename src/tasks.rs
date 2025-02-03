@@ -1,6 +1,6 @@
 #![allow(unused_variables, unused_mut, dead_code)]
 
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use crate::{
     config::FacultyManagerMealplanConfig,
@@ -8,7 +8,7 @@ use crate::{
     structs::{self},
     Data,
 };
-use chrono::{Datelike, Duration, Timelike};
+use chrono::{Datelike, Timelike};
 use influxdb2::models::DataPoint;
 use poise::serenity_prelude::{self as serenity, Mentionable, ShardId};
 use rss::Channel;
@@ -359,7 +359,7 @@ pub async fn log_latency_to_influx(
 
         let points = vec![DataPoint::builder("latency")
             .field("latency", latency.as_millis() as i64)
-            .timestamp(chrono::Utc::now().timestamp_nanos())
+            .timestamp(chrono::Utc::now().timestamp_nanos_opt().unwrap())
             .build()
             .unwrap()];
 

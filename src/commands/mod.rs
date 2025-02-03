@@ -41,6 +41,7 @@ async fn help_autocomplete<'a>(ctx: Context<'_>, partial: &'a str) -> Vec<String
 }
 
 /// Optional configuration for how the help message from [`help()`] looks
+#[allow(unused)]
 pub struct HelpConfiguration<'a> {
     /// Extra text displayed at the bottom of your message. Can be used for help and tips specific
     /// to your bot

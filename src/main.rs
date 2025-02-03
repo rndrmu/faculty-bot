@@ -6,9 +6,6 @@ mod tasks;
 mod utils;
 mod web;
 
-use chrono::{DateTime, FixedOffset};
-use influxdb2::models::{DataPoint, Query};
-use influxdb2::{models::WriteDataPoint, Client};
 
 use dashmap::DashMap;
 use dotenv::dotenv;
@@ -19,7 +16,6 @@ use poise::{
 use rocket_dyn_templates::Template;
 use sqlx::postgres::PgPoolOptions;
 use structs::CodeEmailPair;
-use tokio::stream;
 use tracing_subscriber::prelude::*;
 use utils::CurrentEmail;
 use web::auth::User;
@@ -180,7 +176,7 @@ async fn start_bot() -> Result<(), prelude::Error> {
 
     let influx_host = "https://us-east-1-1.aws.cloud2.influxdata.com";
     let influx_org = "faculty_manager";
-    let influx_bucket = "faculty_manager";
+    let _influx_bucket = "faculty_manager";
     let auth_token = std::env::var("INFLUX_TOKEN").expect("Expected `INFLUX_TOKEN` in the environment");
 
     let influx_client = influxdb2::Client::new(influx_host, influx_org, auth_token);

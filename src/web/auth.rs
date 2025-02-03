@@ -3,8 +3,8 @@ use jwt::{SignWithKey, VerifyWithKey};
 use serde::{Deserialize, Serialize};
 use sha2::Sha256;
 use std::collections::BTreeMap;
-use rocket::http::{Cookie, CookieJar, Status};
-use rocket::request::{self, Outcome, Request, FromRequest};
+use rocket::http::{CookieJar, Status};
+use rocket::request::{Outcome, Request, FromRequest};
 
 
 
@@ -105,8 +105,9 @@ impl User {
 
 }
 
-
+#[allow(unused)]
 pub struct AdminUser<'r>(&'r str);
+#[allow(unused)]
 pub struct AuthenticatedUser<'r>(&'r str);
 
 #[derive(Debug)]

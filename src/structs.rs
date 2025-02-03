@@ -7,12 +7,14 @@ pub struct UserXP {
     pub user_level: i32,
 }
 
+#[allow(unused)]
 #[derive(Debug, FromRow)]
 pub struct VerifiedUsers {
     pub user_id: i64,
     pub user_email: String,
 }
 
+#[allow(unused)]
 #[derive(Debug, FromRow)]
 pub struct VoiceChannels {
     pub channel_id: i64,
@@ -20,6 +22,7 @@ pub struct VoiceChannels {
     pub deletion_marker: bool,
 }
 
+#[allow(unused)]
 #[derive(Debug, FromRow)]
 pub struct Mensaplan {
     pub date: String,
@@ -27,6 +30,7 @@ pub struct Mensaplan {
     pub plan_hash: String,
 }
 
+#[allow(unused)]
 #[derive(Debug, FromRow)]
 pub struct Ads {
     pub message_id: i64,
@@ -41,6 +45,7 @@ pub struct Rules {
 }
 
 #[derive(Debug, FromRow)]
+#[allow(unused)]
 pub struct Semestermods {
     pub user_id: i64,
 }
@@ -55,6 +60,7 @@ impl Default for UserXP {
     }
 }
 
+#[allow(unused)]
 #[derive(Debug, FromRow)]
 pub struct Rss {
     pub rss_title: String,

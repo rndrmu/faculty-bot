@@ -66,23 +66,23 @@ pub fn setup() -> Template {
 
 
 
-use rocket::http::{Cookie, CookieJar, Status};
-use rocket::request::{self, Outcome, Request, FromRequest};
+use rocket::http::CookieJar;
+use rocket::request::Request;
 
 
 /// Admin dashboard
 #[get("/admin")]
-pub fn admin(user: AdminUser<'_>) -> Template {
+pub fn admin(_user: AdminUser<'_>) -> Template {
     Template::render("admin", &{})
 }
 
 #[catch(404)]
-pub fn not_found(req: &Request) -> Template {
+pub fn not_found(_req: &Request) -> Template {
     Template::render("404", &{})
 }
 
 #[catch(401)]
-pub fn unauthorized(req: &Request) -> Template {
+pub fn unauthorized(_req: &Request) -> Template {
     Template::render("401", &{})
 }
 

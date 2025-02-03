@@ -16,6 +16,7 @@ pub struct Response<T> {
 }
 
 #[derive(Deserialize)]
+#[allow(unused)]
 pub  struct Code {
     pub code: String,
     pub email: String,

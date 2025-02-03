@@ -159,6 +159,7 @@ async fn get_discord_user(client: &reqwest::Client, access_token: &str) -> Resul
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
+#[allow(unused)]
 #[non_exhaustive]
 pub struct Guild {
     id: String,
@@ -190,6 +191,8 @@ pub struct DiscordOAuthClient {
 }
 
 impl DiscordOAuthClient {
+    
+    #[allow(unused)]
     pub fn new() -> Result<Self, std::env::VarError> {
         Ok(Self {
             client: Client::new(),
@@ -200,6 +203,7 @@ impl DiscordOAuthClient {
         })
     }
 
+    #[allow(unused)]
     pub async fn exchange_code(&self, code: &str) -> Result<TokenResponse, reqwest::Error> {
         let form = [
             ("client_id", &self.client_id),
@@ -218,10 +222,12 @@ impl DiscordOAuthClient {
             .await
     }
 
+    #[allow(unused)]
     pub async fn get_current_user(&self, access_token: &str) -> Result<UserInfo, reqwest::Error> {
         self.get_authenticated_resource("users/@me", access_token).await
     }
 
+    #[allow(unused)]
     pub async fn get_user_guilds(&self, access_token: &str) -> Result<Vec<Guild>, reqwest::Error> {
         self.get_authenticated_resource("users/@me/guilds", access_token).await
     }
@@ -238,4 +244,6 @@ impl DiscordOAuthClient {
             .json()
             .await
     }
+
+    
 }

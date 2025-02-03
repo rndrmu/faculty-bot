@@ -193,7 +193,7 @@ pub async fn code(
     // this deadlocks the bot ?? What the fuck ?? fix ur code acri
     let dashmap = ctx.data().email_codes.clone();
     // delete user_id from dashmap
-    if let Some (skrr) = dashmap.remove(&user_id) {
+    if let Some (_skrr) = dashmap.remove(&user_id) {
         tracing::debug!("deleted successfully!")
     } else {
         tracing::error!(":hmm:")
