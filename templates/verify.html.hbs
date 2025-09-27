@@ -87,8 +87,8 @@
                 <div class="text-4xl text-red-500 mb-3">
                     <i class="fas fa-times-circle"></i>
                 </div>
-                <h2 class="text-xl font-bold mb-4">Verifizierung fehlgeschlagen!</h2>
-                <p class="text-gray-300 mb-6">Etwas ist schiefgelaufen. Überprüfe deine Eingaben und versuche es noch einmal.</p>
+                <h2 class="text-xl font-bold mb-4" x-text="errorMessageTitle"></h2>
+                <p class="text-gray-300 mb-6" x-text="errorMessage"></p>
                 <button 
                     @click="closeModal" 
                     class="px-6 py-2 bg-red-500 text-white rounded-lg font-medium shadow hover:bg-red-400 transition">
@@ -104,6 +104,8 @@
                 step: 1,
                 email: '',
                 verificationCode: '',
+                errorMessage: '',
+                errorMessageTitle: 'Etwas ist schiefgelaufen!',
                 loading: false,
                 success: false,
                 failed: false,
@@ -118,6 +120,13 @@
                         });
                         const json = await res.json();
 
+                        if (json.data == "ERR_USER_EXISTS") {
+                            this.failed = true;
+                            this.errorMessage = "Diese E-Mail-Adresse ist bereits verifiziert!";
+                            this.errorMessageTitle = "Fehler - Account existiert bereits!";
+                            return;
+                        }
+
                         if (json.status === 200) {
                             this.step = 2;
                         } else {
@@ -125,6 +134,8 @@
                         }
                     } catch (err) {
                         this.failed = true;
+                        this.errorMessage = "Etwas ist schiefgelaufen. Überprüfe deine Eingaben und versuche es erneut.";
+                        this.errorMessageTitle = "Fehler - E-Mail nicht gesendet!";
                     } finally {
                         this.loading = false;
                     }

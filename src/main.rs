@@ -141,7 +141,7 @@ async fn start_bot() -> Result<(), prelude::Error> {
     }
 
     // read config.json
-    let config = config::read_config().expect("Failed to read config file");
+    let config: config::FacultyManagerConfig = config::read_config().expect("Failed to read config file");
 
     // print mealplan post day and time
     println!(

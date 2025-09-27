@@ -7,6 +7,11 @@ yarn-error.log*
 
 target/
 
+# beta frontend
+frontend/
+
+build/
+
 # Dependency directories
 node_modules/
 

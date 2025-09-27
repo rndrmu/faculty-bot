@@ -25,7 +25,7 @@ pub async fn index(
         is_admin,
     };
     
-    Template::render("home", &ctx)
+    Template::render("wip", &ctx)
 }
 
 #[get("/reverify")]

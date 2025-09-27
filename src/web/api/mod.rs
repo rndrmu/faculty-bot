@@ -11,6 +11,24 @@ use crate::web::{Roles, User};
 pub fn send_mail(email: Json<Email>) -> Json<Response<String>> {
     println!("Email: {}", email.email);
 
+    // check if email is already in use
+    // let pool = &ctx.data().db;
+    // let user = sqlx::query_as::<sqlx::Postgres, structs::VerifiedUsers>( "SELECT * FROM verified_users WHERE user_email = $1", )
+    // .bind(&email_used)
+    // .fetch_optional(pool)
+    // .await
+    // .map_err(Error::Database)?;
+
+    // dummy true for testing
+    let user = true;
+    if user {
+        return Json(Response {
+            data: "ERR_USER_EXISTS".to_string(),
+            status: 400,
+            message: "E-Mail Adresse wird bereits verwendet, möchtest du stattdessen deinen Account wechseln?".to_string(),
+        });
+    }
+
     let email_regex = regex::Regex::new(r"^[a-zA-Z0-9_.+-]+@stud.hs-kempten.de$").unwrap();
     // check if the email is valid
     if !email_regex.is_match(&email.email) {

@@ -1,39 +1,45 @@
-FROM rust:1.83 as builder
-ENV RUSTFLAGS="-C target-cpu=native"
+# =================================================================
+# Builder Stage - Thanks to ChatGPT for updating this <3 <3 <3
+# =================================================================
+FROM rust:1.90-bullseye as builder
 
-
+# Set a working directory
 WORKDIR /faculty_manager
 
-RUN apt-get update && apt-get install -y cmake && apt-get clean
+# (Optional) Install cmake only if a dependency truly needs it
+RUN apt-get update && apt-get install -y cmake && rm -rf /var/lib/apt/lists/*
 
-
-
-# This is a dummy build to get the dependencies cached.
+# Cache dependencies
 COPY Cargo.toml Cargo.lock ./
 RUN mkdir src && \
-    echo "// dummy file" > src/lib.rs && \
+    echo "fn main() {}" > src/main.rs && \
     cargo build --release && \
-    rm -r src
+    rm -rf src target/release/deps/faculty_manager*
 
-# This is the actual build, copy in the rest of the sources
+# Build the actual application
 COPY . .
 RUN cargo build --release
 
-# Now make the runtime container
-FROM debian:buster-slim
+# =================================================================
+# Final Runtime Stage
+# =================================================================
+FROM debian:bullseye-slim
 
-# install ca-certificates
-RUN \
-  apt-get update && \
-  apt-get install ca-certificates -y
+# Install runtime dependencies in a single, clean layer
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+      ca-certificates \
+      graphicsmagick \
+      imagemagick \
+      ghostscript && \
+    rm -rf /var/lib/apt/lists/*
 
-# Install graphics-/imagemagick
-RUN apt-get update && apt-get upgrade -y && apt-get install -y graphicsmagick imagemagick ghostscript && rm -rf /var/lib/apt/lists/*
-# allow ghostscript to convert pdf to png
-RUN  mv /etc/ImageMagick-6/policy.xml /etc/ImageMagick-6/policy.xml.off
+# Note: The path to policy.xml might differ in newer ImageMagick versions.
+# This assumes ImageMagick 6 is still used in Bookworm. Verify if issues arise.
+RUN mv /etc/ImageMagick-6/policy.xml /etc/ImageMagick-6/policy.xml.off || true
 
+# Copy the compiled binary from the builder stage
 COPY --from=builder /faculty_manager/target/release/faculty_manager /usr/local/bin/faculty_manager
-# copy config and env files
-COPY Cargo.lock /
 
+# Set the command to run the application
 CMD ["/usr/local/bin/faculty_manager"]
