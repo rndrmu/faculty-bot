@@ -141,10 +141,8 @@ pub async fn post_rss(ctx: serenity::Context, data: Data) -> Result<(), Error> {
                 let date = chrono::DateTime::parse_from_rfc2822(date_).unwrap();
 
                 // to combat spam, filter out old items (all before July 11th 2024)
-                if date
-                    < chrono::DateTime::parse_from_rfc2822("Thu, 11 Jul 2024 00:00:00 +0200")
-                        .unwrap()
-                {
+                let cutoff_date = chrono::DateTime::parse_from_rfc2822("Sat, 27 Sep 2025 00:00:00 +0200").unwrap();
+                if date < cutoff_date {
                     continue;
                 } else {
                     tracing::info!("Found new rss item");
