@@ -126,7 +126,7 @@ async fn main() {
 
    tokio::select! {
          _ = start_bot() => {},
-         //_ = rocket_result.launch() => {},
+         _ = rocket_result.launch() => {},
          _ = ctrl_z => {
               println!("Shutting down");
          }
